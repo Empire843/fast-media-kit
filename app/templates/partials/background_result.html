@@ -1,0 +1,19 @@
+<div class="notice success">
+  <strong>✓ Background removed</strong>
+  <p>{{ files|length }} image{{ '' if files|length == 1 else 's' }} ready.</p>
+</div>
+
+{% include "partials/log_panel.html" %}
+
+<div class="image-results">
+  {% for file in files %}
+    <article class="image-card">
+      <img src="/files/processed/{{ job_id }}/{{ file.name }}" alt="{{ file.name }}" />
+      <a href="/files/processed/{{ job_id }}/{{ file.name }}">{{ file.name }}</a>
+    </article>
+  {% endfor %}
+</div>
+
+{% if zip_path %}
+  <a class="primary-link" href="/files/processed/{{ job_id }}/{{ zip_path.name }}">Download all as ZIP</a>
+{% endif %}

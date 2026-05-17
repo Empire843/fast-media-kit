@@ -1,0 +1,36 @@
+<div class="notice">
+  <strong>Available formats</strong>
+  <p>{{ formats|length }} format rows found.</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Ext</th>
+        <th>Resolution</th>
+        <th>FPS</th>
+        <th>Video</th>
+        <th>Audio</th>
+        <th>MB</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in formats %}
+        <tr>
+          <td>{{ item.format_id }}</td>
+          <td>{{ item.ext }}</td>
+          <td>{{ item.resolution }}</td>
+          <td>{{ item.fps }}</td>
+          <td>{{ item.vcodec }}</td>
+          <td>{{ item.acodec }}</td>
+          <td>{{ item.size }}</td>
+          <td>{{ item.note }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+

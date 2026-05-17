@@ -1,0 +1,13 @@
+<div class="notice success">
+  <strong>✓ XLSX translated</strong>
+  <p>The workbook structure was kept and selected sheet text was translated.</p>
+</div>
+
+{% include "partials/log_panel.html" %}
+
+<div class="file-list">
+  <a class="file-row" href="/files/processed/{{ job_id }}/{{ file.name }}">
+    <span>{{ file.name }}</span>
+    <strong>Download ↓</strong>
+  </a>
+</div>

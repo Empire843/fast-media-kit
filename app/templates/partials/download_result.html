@@ -1,0 +1,15 @@
+<div class="notice success">
+  <strong>✓ Download complete</strong>
+  <p>{{ files|length }} file{{ '' if files|length == 1 else 's' }} ready.</p>
+</div>
+
+{% include "partials/log_panel.html" %}
+
+<div class="file-list">
+  {% for file in files %}
+    <a class="file-row" href="/files/downloads/{{ job_id }}/{{ file.name }}">
+      <span>{{ file.name }}</span>
+      <strong>Download ↓</strong>
+    </a>
+  {% endfor %}
+</div>

@@ -1,0 +1,7 @@
+{% if logs %}
+  <details class="log-panel" open>
+    <summary>Processing log</summary>
+    <pre>{% for line in logs %}{{ line }}
+{% endfor %}</pre>
+  </details>
+{% endif %}

@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <span class="logo-mark">Q</span>
+        <div>
+          <h1>Quick Media Tools</h1>
+          <p>Creator utilities</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-search">
+      <input class="search-input" type="text" placeholder="Search tools…" data-tool-search />
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Video Tools -->
+      <div class="nav-category" data-category>
+        <div class="nav-category-label" data-category-toggle>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          Video
+        </div>
+        <div class="nav-category-items">
+          <button class="nav-tool {{ 'active' if active_tool == 'download' else '' }}" data-tool="download"
+            data-search-text="download video facebook tiktok youtube">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download video
+          </button>
+          <button class="nav-tool upcoming" data-search-text="video to mp3 audio extract">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+            Video to MP3
+          </button>
+          <button class="nav-tool upcoming" data-search-text="compress video reduce size">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <polyline points="4 14 10 14 10 20" />
+              <polyline points="20 10 14 10 14 4" />
+              <line x1="14" y1="10" x2="21" y2="3" />
+              <line x1="3" y1="21" x2="10" y2="14" />
+            </svg>
+            Compress video
+          </button>
+          <button class="nav-tool upcoming" data-search-text="trim cut audio video clip">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <circle cx="6" cy="6" r="3" />
+              <circle cx="6" cy="18" r="3" />
+              <line x1="20" y1="4" x2="8.12" y2="15.88" />
+              <line x1="14.47" y1="14.48" x2="20" y2="20" />
+              <line x1="8.12" y1="8.12" x2="12" y2="12" />
+            </svg>
+            Trim audio/video
+          </button>
+        </div>
+      </div>
+
+      <!-- Document Tools -->
+      <div class="nav-category" data-category>
+        <div class="nav-category-label" data-category-toggle>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          Documents
+        </div>
+        <div class="nav-category-items">
+          <button class="nav-tool {{ 'active' if active_tool == 'translate' else '' }}" data-tool="translate"
+            data-search-text="translate xlsx excel workbook language">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <path d="m5 8 6 6" />
+              <path d="m4 14 6-6 2-3" />
+              <path d="M2 5h12" />
+              <path d="M7 2h1" />
+              <path d="m22 22-5-10-5 10" />
+              <path d="M14 18h6" />
+            </svg>
+            Translate XLSX
+          </button>
+        </div>
+      </div>
+
+      <!-- Image Tools -->
+      <div class="nav-category" data-category>
+        <div class="nav-category-label" data-category-toggle>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          Images
+        </div>
+        <div class="nav-category-items">
+          <button class="nav-tool upcoming" data-search-text="remove background image transparent">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            Remove background
+          </button>
+          <button class="nav-tool upcoming" data-search-text="resize image scale dimension">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <polyline points="15 3 21 3 21 9" />
+              <polyline points="9 21 3 21 3 15" />
+              <line x1="21" y1="3" x2="14" y2="10" />
+              <line x1="3" y1="21" x2="10" y2="14" />
+            </svg>
+            Resize image
+          </button>
+          <button class="nav-tool upcoming" data-search-text="convert format webp png jpg image">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <polyline points="16 16 12 12 8 16" />
+              <line x1="12" y1="12" x2="12" y2="21" />
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </svg>
+            Convert format
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="status-dot {{ 'ok' if ffmpeg_available else 'warn' }}"></span>
+      <span>ffmpeg {{ 'ready' if ffmpeg_available else 'missing' }}</span>
+      <a href="/docs" target="_blank">API docs</a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- WORKSPACES -->
+  <main>
+    <!-- Download Video -->
+    <section class="workspace active" data-workspace="download">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" id="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">yt-dlp</span>
+          <h2>Download video</h2>
+        </div>
+        <span class="workspace-chip">Facebook · TikTok · YouTube · More</span>
+      </header>
+      <div class="split-view">
+        <div class="form-panel">
+          <form class="form-stack" data-async-form data-target="#download-result" action="/tools/download-video"
+            method="post" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="input-url">Video URL</label>
+              <input id="input-url" name="url" type="url" placeholder="https://www.facebook.com/watch/?v=..."
+                required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sel-platform">Platform</label>
+                <select id="sel-platform" name="platform">
+                  <option>Facebook</option>
+                  <option>TikTok</option>
+                  <option>YouTube</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sel-quality">Quality</label>
+                <select id="sel-quality" name="quality">
+                  <option value="best">Best available</option>
+                  <option value="1080p">Up to 1080p</option>
+                  <option value="720p">Up to 720p</option>
+                  <option value="480p">Up to 480p</option>
+                  <option value="360p">Up to 360p</option>
+                  <option value="audio">Audio only</option>
+                </select>
+              </div>
+            </div>
+            <button class="advanced-toggle" type="button" data-toggle-advanced>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Advanced options
+            </button>
+            <div class="advanced-content" data-advanced-content>
+              <div class="form-group">
+                <label for="input-fmt">Custom yt-dlp format</label>
+                <input id="input-fmt" name="custom_format" placeholder="Leave empty for best quality" />
+              </div>
+              <div class="form-row">
+                <div class="drop-zone" data-drop-zone="cookies">
+                  <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg></div>
+                  <div class="drop-zone-text">Drop <strong>cookies.txt</strong> or click</div>
+                  <input name="cookies" type="file" accept=".txt" />
+                </div>
+                <label class="check-row"><input name="redownload" type="checkbox" value="true" /><span>Force
+                    redownload</span></label>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" type="submit">Download video</button>
+              <button class="btn btn-secondary" type="submit" formaction="/tools/list-formats"
+                data-target="#download-result">List formats</button>
+            </div>
+          </form>
+        </div>
+        <div class="result-panel">
+          <div id="download-result" class="result-zone">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg></div>
+              <h4>Ready to download</h4>
+              <p>Paste a URL and hit download — results appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Translate XLSX -->
+    <section class="workspace" data-workspace="translate">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">AI translation</span>
+          <h2>Translate XLSX</h2>
+        </div>
+        <span class="workspace-chip">Preserves workbook structure</span>
+      </header>
+      <div class="split-view">
+        <div class="form-panel">
+          <form class="form-stack" data-async-form data-target="#xlsx-result" action="/tools/translate-xlsx"
+            method="post" enctype="multipart/form-data">
+            <div class="drop-zone" data-drop-zone="workbook" data-sheet-loader data-sheet-target="#xlsx-sheet-list">
+              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg></div>
+              <div class="drop-zone-text">Drop <strong>.xlsx file</strong> or click to browse</div>
+              <input name="workbook" type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+            </div>
+            <div id="xlsx-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sel-lang">Target language</label>
+                <select id="sel-lang" name="target_language">{% for value, label in translation_languages %}<option
+                    value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+              </div>
+              <div class="form-group">
+                <label for="input-key">API key</label>
+                <input id="input-key" name="api_key" type="password"
+                  placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key' }}"
+                  autocomplete="off" />
+                <span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default
+                  key.' }}</span>
+              </div>
+            </div>
+            <button class="advanced-toggle" type="button" data-toggle-advanced>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Provider settings
+            </button>
+            <div class="advanced-content" data-advanced-content>
+              <div class="provider-box">
+                <div class="provider-header">
+                  <div><strong>Provider</strong><span>Default: AIShop24H</span></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label for="sel-prov">Provider</label><select id="sel-prov" name="provider"
+                      data-provider-select>{% for value, label in translation_providers.items() %}<option
+                        value="{{ value }}" {{ 'selected' if value==translation_default_provider else '' }}>{{ label }}
+                      </option>{% endfor %}</select></div>
+                  <div class="form-group"><label for="input-model">Model</label><input id="input-model" name="model"
+                      value="{{ translation_default_model }}" data-model-input /></div>
+                </div>
+                <div class="form-group"><label for="input-url2">Base URL</label><input id="input-url2" name="base_url"
+                    value="{{ translation_default_base_url }}" /><span class="field-help">AIShop24H:
+                    https://aishop24h.com/v1</span></div>
+                <div class="form-row" style="margin-top: 1rem;">
+                  <div class="form-group"><label for="input-workers">Max workers (Luồng)</label><input
+                      id="input-workers" type="number" name="max_workers" value="{{ translation_default_max_workers }}" min="1" max="20" /></div>
+                  <div class="form-group"><label for="input-items">Max items (Số ô/gói với mỗi request)</label><input
+                      id="input-items" type="number" name="max_items" value="{{ translation_default_max_items }}" min="1" max="500" /></div>
+                </div>
+              </div>
+            </div>
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Translate XLSX</button></div>
+          </form>
+        </div>
+        <div class="result-panel">
+          <div id="xlsx-result" class="result-zone">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="m5 8 6 6" />
+                  <path d="m4 14 6-6 2-3" />
+                  <path d="M2 5h12" />
+                  <path d="M7 2h1" />
+                  <path d="m22 22-5-10-5 10" />
+                  <path d="M14 18h6" />
+                </svg></div>
+              <h4>Ready to translate</h4>
+              <p>Upload an XLSX file — results appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+{% endblock %}

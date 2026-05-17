@@ -1,0 +1,16 @@
+<div class="sheet-picker">
+  <div class="sheet-picker-head">
+    <strong>Sheets to translate</strong>
+    <span>Select one or more sheets. If none are selected, all sheets are translated.</span>
+  </div>
+  <div class="sheet-grid">
+    {% for sheet in sheets %}
+      <label class="check-row compact">
+        <input name="selected_sheets" type="checkbox" value="{{ sheet }}" checked />
+        <span>{{ sheet }}</span>
+      </label>
+    {% endfor %}
+  </div>
+</div>
+
+{% include "partials/log_panel.html" %}

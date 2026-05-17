@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+storage/downloads/*
+storage/processed/*
+!storage/downloads/.gitkeep
+!storage/processed/.gitkeep
+vendor/ffmpeg-download/

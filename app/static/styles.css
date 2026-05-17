@@ -183,14 +183,15 @@ td{color:var(--text2)}
 
 @media(max-width:860px){
   .app{grid-template-columns:1fr}
+  main{grid-column:1}
   .sidebar{position:fixed;left:-260px;top:0;width:260px;z-index:100;transition:left var(--t);box-shadow:4px 0 24px rgba(0,0,0,.12)}
   .sidebar.open{left:0}
   .sidebar-toggle{display:block}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:99}
   .sidebar.open~.sidebar-overlay{display:block}
-  .split-view{grid-template-columns:1fr}
-  .form-panel{border-right:none;border-bottom:1px solid var(--line)}
-  .result-panel{min-height:280px}
+  .split-view{grid-template-columns:1fr;overflow-y:auto}
+  .form-panel{border-right:none;border-bottom:1px solid var(--line);overflow:visible}
+  .result-panel{min-height:280px;overflow:visible}
   .form-row{grid-template-columns:1fr}
   .workspace-chip{display:none}
 }

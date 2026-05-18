@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -24,6 +25,80 @@ from app.constants import (
     DEFAULT_MAX_ITEMS,
     DEFAULT_MAX_CHARS,
 )
+
+
+VIETNAMESE_DIACRITIC_RE = re.compile(
+    r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡ"
+    r"ùúụủũưừứựửữỳýỵỷỹđ]",
+    re.IGNORECASE,
+)
+
+SCRIPT_RANGES = {
+    "Japanese": re.compile(r"[\u3040-\u30ff\u3400-\u9fff]"),
+    "Korean": re.compile(r"[\uac00-\ud7af]"),
+    "Chinese Simplified": re.compile(r"[\u3400-\u9fff]"),
+    "Thai": re.compile(r"[\u0e00-\u0e7f]"),
+}
+
+TARGET_LANGUAGE_MARKERS = {
+    "Vietnamese": {
+        "cua",
+        "cho",
+        "cac",
+        "khong",
+        "duoc",
+        "trong",
+        "voi",
+        "hang",
+        "san",
+        "pham",
+        "mo",
+        "ta",
+        "ten",
+        "gia",
+        "ban",
+        "ngay",
+        "thang",
+    },
+    "English": {
+        "the",
+        "and",
+        "for",
+        "with",
+        "from",
+        "this",
+        "that",
+        "product",
+        "description",
+        "name",
+        "price",
+        "size",
+        "color",
+    },
+    "French": {
+        "le",
+        "la",
+        "les",
+        "des",
+        "une",
+        "pour",
+        "avec",
+        "dans",
+        "produit",
+        "description",
+    },
+    "Spanish": {
+        "el",
+        "la",
+        "los",
+        "las",
+        "para",
+        "con",
+        "producto",
+        "descripcion",
+        "precio",
+    },
+}
 
 
 class TranslationError(RuntimeError):
@@ -80,22 +155,55 @@ def translate_workbook(
         if missing:
             raise TranslationError(f"Sheet not found: {', '.join(missing)}")
 
-        cells: list[tuple[Any, str]] = []
+        cells: list[tuple[Any, str, str]] = []
+        scanned_cells = 0
+        candidate_cells = 0
+        skipped_target_language = 0
         for sheet_name in targets:
             sheet = workbook[sheet_name]
             count_before = len(cells)
+            skipped_before = skipped_target_language
             for row in sheet.iter_rows():
                 for cell in row:
+                    scanned_cells += 1
                     value = cell.value
                     if should_translate(value, cell.data_type):
-                        cells.append((cell, normalize_text(value)))
-            logs.append(f"Sheet '{sheet_name}': queued {len(cells) - count_before} text cell(s).")
+                        candidate_cells += 1
+                        original_text = value
+                        normalized_text = normalize_text(value)
+                        if is_likely_target_language(normalized_text, target_language):
+                            skipped_target_language += 1
+                            continue
+                        cells.append((cell, original_text, normalized_text))
+            logs.append(
+                f"Sheet '{sheet_name}': queued {len(cells) - count_before} text cell(s); "
+                f"skipped {skipped_target_language - skipped_before} likely already in {target_language}."
+            )
 
-        if not cells:
+        if not cells and not skipped_target_language:
             raise TranslationError("No translatable text cells found in the selected sheet(s).")
 
+        unique_texts = list(dict.fromkeys(text for _, _, text in cells))
+        duplicate_cells = len(cells) - len(unique_texts)
+        logs.append(f"Scanned {scanned_cells} workbook cell(s).")
+        logs.append(f"Found {candidate_cells} text cell(s) after base filters.")
+        if skipped_target_language:
+            logs.append(f"Skipped {skipped_target_language} cell(s) likely already in {target_language}.")
+        logs.append(
+            f"Deduplicated {len(cells)} queued cell(s) to {len(unique_texts)} unique text(s); "
+            f"saved {duplicate_cells} duplicate translation(s)."
+        )
+
+        if not cells:
+            job_id, output_path = save_workbook(workbook, original_name, target_language)
+            logs.append("No cells were sent to the provider because all candidates looked already translated.")
+            logs.append(f"Saved workbook without translation changes: {output_path.name}")
+            system_elapsed = time.time() - system_start_time
+            logs.append(f"✅ Total system execution time: {system_elapsed:.2f} seconds.")
+            return job_id, output_path, logs
+
         translated = translate_texts(
-            texts=[text for _, text in cells],
+            texts=unique_texts,
             target_language=target_language,
             provider=provider,
             model=model,
@@ -105,16 +213,12 @@ def translate_workbook(
             max_workers=max_workers,
             max_items=max_items,
         )
+        translations_by_text = dict(zip(unique_texts, translated))
 
-        for (cell, original_text), translated_text in zip(cells, translated):
-            cell.value = preserve_wrapping(original_text, translated_text)
+        for cell, original_text, normalized_text in cells:
+            cell.value = preserve_wrapping(original_text, translations_by_text[normalized_text])
 
-        job_id = uuid.uuid4().hex
-        job_dir = PROCESSED_DIR / job_id
-        job_dir.mkdir(parents=True, exist_ok=True)
-        output_name = f"{Path(original_name).stem}_{slugify(target_language)}.xlsx"
-        output_path = job_dir / output_name
-        workbook.save(output_path)
+        job_id, output_path = save_workbook(workbook, original_name, target_language)
         logs.append(f"Saved translated workbook: {output_path.name}")
         
         system_elapsed = time.time() - system_start_time
@@ -140,6 +244,47 @@ def should_translate(value: object, data_type: str) -> bool:
     if re.fullmatch(r"https?://\S+|\S+@\S+\.\S+", text, flags=re.IGNORECASE):
         return False
     return any(char.isalpha() for char in text)
+
+
+def save_workbook(workbook: Any, original_name: str, target_language: str) -> tuple[str, Path]:
+    job_id = uuid.uuid4().hex
+    job_dir = PROCESSED_DIR / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+    output_name = f"{Path(original_name).stem}_{slugify(target_language)}.xlsx"
+    output_path = job_dir / output_name
+    workbook.save(output_path)
+    return job_id, output_path
+
+
+def is_likely_target_language(text: str, target_language: str) -> bool:
+    stripped = text.strip()
+    if len(stripped) < 4:
+        return False
+
+    script_re = SCRIPT_RANGES.get(target_language)
+    if script_re and script_re.search(stripped):
+        return True
+
+    if target_language == "Vietnamese" and VIETNAMESE_DIACRITIC_RE.search(stripped):
+        return True
+
+    lower_text = strip_accents(stripped.lower())
+    words = re.findall(r"[a-zA-Z]+", lower_text)
+    if len(words) < 2:
+        return False
+
+    markers = TARGET_LANGUAGE_MARKERS.get(target_language)
+    if not markers:
+        return False
+
+    marker_hits = sum(1 for word in words if word in markers)
+    return marker_hits >= 2
+
+
+def strip_accents(value: str) -> str:
+    value = value.replace("đ", "d").replace("Đ", "D")
+    normalized = unicodedata.normalize("NFD", value)
+    return "".join(char for char in normalized if unicodedata.category(char) != "Mn")
 
 
 def normalize_text(value: str) -> str:

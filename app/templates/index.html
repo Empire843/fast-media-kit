@@ -283,12 +283,11 @@
                     value="{{ value }}">{{ label }}</option>{% endfor %}</select>
               </div>
               <div class="form-group">
-                <label for="input-key">API key</label>
+                <label for="input-key">API key</label><span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default
+                  key.' }}</span>
                 <input id="input-key" name="api_key" type="password"
                   placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key' }}"
                   autocomplete="off" />
-                <span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default
-                  key.' }}</span>
               </div>
             </div>
             <button class="advanced-toggle" type="button" data-toggle-advanced>

@@ -1,20 +1,25 @@
 from __future__ import annotations
 
+import copy
 import io
+import hashlib
 import json
+import posixpath
 import re
+import sqlite3
+import time
 import unicodedata
-import urllib.error
 import urllib.parse
-import urllib.request
 import uuid
+import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree as ET
 
 from openpyxl import load_workbook
 
-from app.settings import PROCESSED_DIR
+from app.settings import PROCESSED_DIR, STORAGE_DIR
 
 
 from app.constants import (
@@ -100,8 +105,19 @@ TARGET_LANGUAGE_MARKERS = {
     },
 }
 
+XML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+
+ET.register_namespace("", XML_NS)
+ET.register_namespace("r", REL_NS)
+
 
 class TranslationError(RuntimeError):
+    pass
+
+
+class XlsxXmlFallbackRequired(RuntimeError):
     pass
 
 
@@ -114,6 +130,17 @@ class ProviderRequestError(TranslationError):
 
 
 def list_sheet_names(xlsx_bytes: bytes) -> list[str]:
+    try:
+        with zipfile.ZipFile(io.BytesIO(xlsx_bytes), "r") as archive:
+            workbook_root = ET.fromstring(archive.read("xl/workbook.xml"))
+            sheets_node = workbook_root.find(qn("sheets"))
+            if sheets_node is None:
+                raise XlsxXmlFallbackRequired("workbook has no sheets node")
+            names = [sheet.get("name", "") for sheet in sheets_node.findall(qn("sheet"))]
+            return [name for name in names if name]
+    except Exception:
+        pass
+
     workbook = load_workbook(io.BytesIO(xlsx_bytes), read_only=True, data_only=False)
     try:
         return list(workbook.sheetnames)
@@ -134,19 +161,66 @@ def translate_workbook(
     max_workers: int = DEFAULT_MAX_WORKERS,
     max_items: int = DEFAULT_MAX_ITEMS,
 ) -> tuple[str, Path, list[str]]:
+    logs: list[str] = []
+    try:
+        return translate_workbook_xml(
+            xlsx_bytes=xlsx_bytes,
+            original_name=original_name,
+            selected_sheets=selected_sheets,
+            target_language=target_language,
+            provider=provider,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            max_workers=max_workers,
+            max_items=max_items,
+            logs=logs,
+        )
+    except XlsxXmlFallbackRequired as exc:
+        logs.append(f"XML fast path fallback: {exc}")
+        return translate_workbook_openpyxl(
+            xlsx_bytes=xlsx_bytes,
+            original_name=original_name,
+            selected_sheets=selected_sheets,
+            target_language=target_language,
+            provider=provider,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            max_workers=max_workers,
+            max_items=max_items,
+            prefix_logs=logs,
+        )
+
+
+def translate_workbook_openpyxl(
+    *,
+    xlsx_bytes: bytes,
+    original_name: str,
+    selected_sheets: list[str],
+    target_language: str,
+    provider: str,
+    model: str,
+    api_key: str,
+    base_url: str = "",
+    max_workers: int = DEFAULT_MAX_WORKERS,
+    max_items: int = DEFAULT_MAX_ITEMS,
+    prefix_logs: list[str] | None = None,
+) -> tuple[str, Path, list[str]]:
     if provider not in PROVIDERS:
         raise TranslationError(f"Unsupported provider: {provider}")
     if not api_key:
         raise TranslationError("Missing API key. Enter a key or configure the default key on the server.")
 
-    import time
     system_start_time = time.time()
     
-    logs = [
+    logs = list(prefix_logs or [])
+    logs.extend([
+        "Engine: openpyxl fallback",
         f"Provider: {PROVIDERS[provider]}",
         f"Model: {model}",
         f"Target language: {target_language}",
-    ]
+    ])
     workbook = load_workbook(io.BytesIO(xlsx_bytes), data_only=False)
     try:
         sheet_names = set(workbook.sheetnames)
@@ -202,7 +276,7 @@ def translate_workbook(
             logs.append(f"✅ Total system execution time: {system_elapsed:.2f} seconds.")
             return job_id, output_path, logs
 
-        translated = translate_texts(
+        translated, cache_hits, cache_misses = translate_texts_with_cache(
             texts=unique_texts,
             target_language=target_language,
             provider=provider,
@@ -213,6 +287,7 @@ def translate_workbook(
             max_workers=max_workers,
             max_items=max_items,
         )
+        logs.append(f"Translation cache: {cache_hits} hit(s), {cache_misses} miss(es).")
         translations_by_text = dict(zip(unique_texts, translated))
 
         for cell, original_text, normalized_text in cells:
@@ -227,6 +302,259 @@ def translate_workbook(
         return job_id, output_path, logs
     finally:
         workbook.close()
+
+
+def translate_workbook_xml(
+    *,
+    xlsx_bytes: bytes,
+    original_name: str,
+    selected_sheets: list[str],
+    target_language: str,
+    provider: str,
+    model: str,
+    api_key: str,
+    base_url: str = "",
+    max_workers: int = DEFAULT_MAX_WORKERS,
+    max_items: int = DEFAULT_MAX_ITEMS,
+    logs: list[str] | None = None,
+) -> tuple[str, Path, list[str]]:
+    if provider not in PROVIDERS:
+        raise TranslationError(f"Unsupported provider: {provider}")
+    if not api_key:
+        raise TranslationError("Missing API key. Enter a key or configure the default key on the server.")
+
+    logs = logs if logs is not None else []
+    system_start_time = time.time()
+    logs.extend(
+        [
+            "Engine: XLSX XML fast path",
+            f"Provider: {PROVIDERS[provider]}",
+            f"Model: {model}",
+            f"Target language: {target_language}",
+        ]
+    )
+
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(xlsx_bytes), "r")
+    except zipfile.BadZipFile as exc:
+        raise XlsxXmlFallbackRequired("uploaded file is not a readable XLSX zip") from exc
+
+    with archive:
+        names = set(archive.namelist())
+        if "xl/workbook.xml" not in names or "xl/_rels/workbook.xml.rels" not in names:
+            raise XlsxXmlFallbackRequired("workbook relationships are missing")
+
+        phase_start = time.time()
+        workbook_root = ET.fromstring(archive.read("xl/workbook.xml"))
+        rels_root = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        sheet_paths = resolve_sheet_paths(workbook_root, rels_root)
+        targets = selected_sheets or list(sheet_paths)
+        missing = [name for name in targets if name not in sheet_paths]
+        if missing:
+            raise TranslationError(f"Sheet not found: {', '.join(missing)}")
+
+        target_paths = [sheet_paths[name] for name in targets]
+        missing_paths = [path for path in target_paths if path not in names]
+        if missing_paths:
+            raise XlsxXmlFallbackRequired(f"worksheet XML is missing: {', '.join(missing_paths)}")
+        shared_root = None
+        shared_items: list[ET.Element] = []
+        shared_text_by_index: dict[int, str] = {}
+        if "xl/sharedStrings.xml" in names:
+            shared_root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            shared_items = list(shared_root.findall(qn("si")))
+        logs.append(f"XML parse phase: {time.time() - phase_start:.2f}s.")
+
+        scan_start = time.time()
+        shared_indices: set[int] = set()
+        shared_value_nodes_by_index: dict[int, list[tuple[str, ET.Element]]] = {}
+        sheet_roots: dict[str, ET.Element] = {}
+        inline_entries: list[tuple[str, ET.Element, str, str]] = []
+        scanned_cells = 0
+        candidate_cells = 0
+        skipped_target_language = 0
+
+        for sheet_name, sheet_path in zip(targets, target_paths):
+            sheet_root = ET.fromstring(archive.read(sheet_path))
+            sheet_roots[sheet_path] = sheet_root
+            queued_before = len(shared_indices) + len(inline_entries)
+            skipped_before = skipped_target_language
+            for cell in sheet_root.iter(qn("c")):
+                scanned_cells += 1
+                cell_type = cell.get("t")
+                if cell_type == "s":
+                    value_node = cell.find(qn("v"))
+                    if value_node is None or value_node.text is None:
+                        continue
+                    try:
+                        index = int(value_node.text)
+                    except ValueError:
+                        continue
+                    if index < 0 or index >= len(shared_items):
+                        raise XlsxXmlFallbackRequired(f"shared string index out of range in {sheet_name}")
+                    text_node = plain_shared_text_node(shared_items[index])
+                    if text_node is None:
+                        raise XlsxXmlFallbackRequired(f"rich text shared string is used in selected sheet '{sheet_name}'")
+                    text = normalize_text(text_node.text or "")
+                    if should_translate(text, "s"):
+                        candidate_cells += 1
+                        if is_likely_target_language(text, target_language):
+                            skipped_target_language += 1
+                            continue
+                        shared_indices.add(index)
+                        shared_text_by_index[index] = text
+                        shared_value_nodes_by_index.setdefault(index, []).append((sheet_path, value_node))
+                elif cell_type == "inlineStr":
+                    text_node = plain_inline_text_node(cell)
+                    if text_node is None:
+                        raise XlsxXmlFallbackRequired(f"rich inline string is used in selected sheet '{sheet_name}'")
+                    original_text = text_node.text or ""
+                    text = normalize_text(original_text)
+                    if should_translate(text, "s"):
+                        candidate_cells += 1
+                        if is_likely_target_language(text, target_language):
+                            skipped_target_language += 1
+                            continue
+                        inline_entries.append((sheet_path, text_node, original_text, text))
+            queued_after = len(shared_indices) + len(inline_entries)
+            logs.append(
+                f"Sheet '{sheet_name}': queued {queued_after - queued_before} XML text item(s); "
+                f"skipped {skipped_target_language - skipped_before} likely already in {target_language}."
+            )
+
+        shared_entries = [(index, shared_text_by_index[index]) for index in sorted(shared_indices)]
+        queued_texts = [text for _, text in shared_entries] + [text for _, _, _, text in inline_entries]
+        if not queued_texts and not skipped_target_language:
+            raise TranslationError("No translatable text cells found in the selected sheet(s).")
+
+        unique_texts = list(dict.fromkeys(queued_texts))
+        logs.append(f"XML scan phase: {time.time() - scan_start:.2f}s.")
+        logs.append(f"Scanned {scanned_cells} XML cell(s).")
+        logs.append(f"Found {candidate_cells} text cell(s) after base filters.")
+        if skipped_target_language:
+            logs.append(f"Skipped {skipped_target_language} cell(s) likely already in {target_language}.")
+        logs.append(
+            f"Deduplicated {len(queued_texts)} queued XML text item(s) to {len(unique_texts)} unique text(s); "
+            f"saved {len(queued_texts) - len(unique_texts)} duplicate translation(s)."
+        )
+
+        translations: list[str] = []
+        cache_hits = cache_misses = 0
+        if unique_texts:
+            translations, cache_hits, cache_misses = translate_texts_with_cache(
+                texts=unique_texts,
+                target_language=target_language,
+                provider=provider,
+                model=model,
+                api_key=api_key,
+                base_url=base_url,
+                logs=logs,
+                max_workers=max_workers,
+                max_items=max_items,
+            )
+        logs.append(f"Translation cache: {cache_hits} hit(s), {cache_misses} miss(es).")
+
+        translations_by_text = dict(zip(unique_texts, translations))
+        patch_start = time.time()
+        if shared_root is not None:
+            for index, original_text in shared_entries:
+                new_shared_item = copy.deepcopy(shared_items[index])
+                text_node = plain_shared_text_node(new_shared_item)
+                if text_node is None:
+                    raise XlsxXmlFallbackRequired("shared string became unsupported during patch")
+                text_node.text = preserve_wrapping(original_text, translations_by_text[original_text])
+                new_index = len(shared_items)
+                shared_items.append(new_shared_item)
+                shared_root.append(new_shared_item)
+                for _, value_node in shared_value_nodes_by_index[index]:
+                    value_node.text = str(new_index)
+            shared_root.set("uniqueCount", str(len(shared_items)))
+        for _, text_node, original_text, normalized_text in inline_entries:
+            text_node.text = preserve_wrapping(original_text, translations_by_text[normalized_text])
+
+        replacements: dict[str, bytes] = {}
+        if shared_root is not None and shared_entries:
+            replacements["xl/sharedStrings.xml"] = xml_bytes(shared_root)
+        changed_sheet_paths = {sheet_path for sheet_path, _, _, _ in inline_entries}
+        for nodes in shared_value_nodes_by_index.values():
+            changed_sheet_paths.update(sheet_path for sheet_path, _ in nodes)
+        for sheet_path in changed_sheet_paths:
+            sheet_root = sheet_roots[sheet_path]
+            replacements[sheet_path] = xml_bytes(sheet_root)
+
+        job_id = uuid.uuid4().hex
+        job_dir = PROCESSED_DIR / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        output_path = job_dir / f"{Path(original_name).stem}_{slugify(target_language)}.xlsx"
+        write_xlsx_copy(archive, output_path, replacements)
+        logs.append(f"XML patch/write phase: {time.time() - patch_start:.2f}s.")
+        if not unique_texts:
+            logs.append("No cells were sent to the provider because all candidates looked already translated.")
+        logs.append(f"Saved translated workbook: {output_path.name}")
+        logs.append(f"✅ Total system execution time: {time.time() - system_start_time:.2f} seconds.")
+        return job_id, output_path, logs
+
+
+def qn(tag: str, namespace: str = XML_NS) -> str:
+    return f"{{{namespace}}}{tag}"
+
+
+def resolve_sheet_paths(workbook_root: ET.Element, rels_root: ET.Element) -> dict[str, str]:
+    rel_targets = {
+        rel.get("Id"): rel.get("Target", "")
+        for rel in rels_root.findall(f"{{{PACKAGE_REL_NS}}}Relationship")
+        if rel.get("Id")
+    }
+    paths: dict[str, str] = {}
+    sheets_node = workbook_root.find(qn("sheets"))
+    if sheets_node is None:
+        raise XlsxXmlFallbackRequired("workbook has no sheets node")
+    for sheet in sheets_node.findall(qn("sheet")):
+        name = sheet.get("name")
+        rel_id = sheet.get(qn("id", REL_NS))
+        target = rel_targets.get(rel_id or "")
+        if not name or not target:
+            continue
+        if target.startswith("/"):
+            path = target.lstrip("/")
+        else:
+            path = posixpath.normpath(posixpath.join("xl", target))
+        paths[name] = path
+    if not paths:
+        raise XlsxXmlFallbackRequired("could not resolve worksheet paths")
+    return paths
+
+
+def plain_shared_text_node(shared_item: ET.Element) -> ET.Element | None:
+    direct_texts = shared_item.findall(qn("t"))
+    runs = shared_item.findall(qn("r"))
+    if len(direct_texts) == 1 and not runs:
+        return direct_texts[0]
+    return None
+
+
+def plain_inline_text_node(cell: ET.Element) -> ET.Element | None:
+    inline_node = cell.find(qn("is"))
+    if inline_node is None:
+        return None
+    direct_texts = inline_node.findall(qn("t"))
+    runs = inline_node.findall(qn("r"))
+    if len(direct_texts) == 1 and not runs:
+        return direct_texts[0]
+    return None
+
+
+def xml_bytes(root: ET.Element) -> bytes:
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+
+def write_xlsx_copy(source: zipfile.ZipFile, output_path: Path, replacements: dict[str, bytes]) -> None:
+    with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+        for info in source.infolist():
+            data = replacements.get(info.filename)
+            if data is None:
+                data = source.read(info.filename)
+            target.writestr(info, data)
 
 
 def should_translate(value: object, data_type: str) -> bool:
@@ -297,6 +625,188 @@ def preserve_wrapping(original: str, translated: str) -> str:
     return translated
 
 
+def translate_texts_with_cache(
+    *,
+    texts: list[str],
+    target_language: str,
+    provider: str,
+    model: str,
+    api_key: str,
+    base_url: str,
+    logs: list[str],
+    max_workers: int = DEFAULT_MAX_WORKERS,
+    max_items: int = DEFAULT_MAX_ITEMS,
+) -> tuple[list[str], int, int]:
+    cached = get_cached_translations(
+        texts=texts,
+        provider=provider,
+        base_url=base_url,
+        model=model,
+        target_language=target_language,
+    )
+    missing = [text for text in texts if text not in cached]
+    if missing:
+        translated_missing = translate_texts(
+            texts=missing,
+            target_language=target_language,
+            provider=provider,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            logs=logs,
+            max_workers=max_workers,
+            max_items=max_items,
+            max_chars=DEFAULT_MAX_CHARS,
+        )
+        save_cached_translations(
+            translations=dict(zip(missing, translated_missing)),
+            provider=provider,
+            base_url=base_url,
+            model=model,
+            target_language=target_language,
+        )
+        cached.update(zip(missing, translated_missing))
+    return [cached[text] for text in texts], len(texts) - len(missing), len(missing)
+
+
+def cache_db_path() -> Path:
+    return STORAGE_DIR / "translation_cache.sqlite"
+
+
+def cache_key(
+    *,
+    provider: str,
+    base_url: str,
+    model: str,
+    target_language: str,
+    text: str,
+) -> str:
+    material = "\n".join(
+        [
+            provider,
+            hash_text(base_url.strip().rstrip("/")),
+            model,
+            target_language,
+            hash_text(text),
+        ]
+    )
+    return hash_text(material)
+
+
+def hash_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def ensure_cache_schema(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS translation_cache (
+            cache_key TEXT PRIMARY KEY,
+            provider TEXT NOT NULL,
+            base_url_hash TEXT NOT NULL,
+            model TEXT NOT NULL,
+            target_language TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            source_text TEXT NOT NULL,
+            translated_text TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+
+def get_cached_translations(
+    *,
+    texts: list[str],
+    provider: str,
+    base_url: str,
+    model: str,
+    target_language: str,
+) -> dict[str, str]:
+    if not texts:
+        return {}
+    keys_by_text = {
+        text: cache_key(
+            provider=provider,
+            base_url=base_url,
+            model=model,
+            target_language=target_language,
+            text=text,
+        )
+        for text in texts
+    }
+    connection = sqlite3.connect(cache_db_path())
+    try:
+        ensure_cache_schema(connection)
+        rows = connection.execute(
+            f"SELECT cache_key, translated_text FROM translation_cache WHERE cache_key IN ({','.join('?' for _ in keys_by_text)})",
+            list(keys_by_text.values()),
+        ).fetchall()
+    finally:
+        connection.close()
+    translations_by_key = dict(rows)
+    return {
+        text: translations_by_key[key]
+        for text, key in keys_by_text.items()
+        if key in translations_by_key
+    }
+
+
+def save_cached_translations(
+    *,
+    translations: dict[str, str],
+    provider: str,
+    base_url: str,
+    model: str,
+    target_language: str,
+) -> None:
+    if not translations:
+        return
+    base_url_hash = hash_text(base_url.strip().rstrip("/"))
+    rows = []
+    for source_text, translated_text in translations.items():
+        rows.append(
+            (
+                cache_key(
+                    provider=provider,
+                    base_url=base_url,
+                    model=model,
+                    target_language=target_language,
+                    text=source_text,
+                ),
+                provider,
+                base_url_hash,
+                model,
+                target_language,
+                hash_text(source_text),
+                source_text,
+                translated_text,
+            )
+        )
+    connection = sqlite3.connect(cache_db_path())
+    try:
+        ensure_cache_schema(connection)
+        connection.executemany(
+            """
+            INSERT OR REPLACE INTO translation_cache (
+                cache_key,
+                provider,
+                base_url_hash,
+                model,
+                target_language,
+                source_hash,
+                source_text,
+                translated_text
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def translate_texts(
     *,
     texts: list[str],
@@ -308,19 +818,27 @@ def translate_texts(
     logs: list[str],
     max_workers: int = DEFAULT_MAX_WORKERS,
     max_items: int = DEFAULT_MAX_ITEMS,
+    max_chars: int = DEFAULT_MAX_CHARS,
 ) -> list[str]:
     translations: list[str] = []
-    batches = list(batch_texts(texts, max_items=max_items, max_chars=max_items * 150))
+    batches = list(batch_texts(texts, max_items=max_items, max_chars=max_chars))
     total_batches = len(batches)
     
     # Pre-allocate to maintain the original order since futures complete out of order
     results_by_index: list[list[str] | None] = [None] * total_batches
     
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    import httpx
+
+    timeout = httpx.Timeout(130.0, connect=30.0)
+    limits = httpx.Limits(max_connections=max_workers + 2, max_keepalive_connections=max_workers + 2)
+    with httpx.Client(timeout=timeout, limits=limits) as client, ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_index = {}
         for i, batch in enumerate(batches):
             batch_index = i + 1
-            logs.append(f"Queuing batch {batch_index}/{total_batches}: {len(batch)} cell(s).")
+            logs.append(
+                f"Queuing batch {batch_index}/{total_batches}: "
+                f"{len(batch)} text item(s), {sum(len(item) for item in batch)} chars."
+            )
             future = executor.submit(
                 translate_batch_with_split_retry,
                 batch=batch,
@@ -330,6 +848,7 @@ def translate_texts(
                 api_key=api_key,
                 base_url=base_url,
                 logs=logs,
+                client=client,
             )
             future_to_index[future] = (i, batch_index, batch)
             
@@ -376,15 +895,15 @@ def translate_batch_with_split_retry(
     api_key: str,
     base_url: str,
     logs: list[str],
+    client: Any,
 ) -> list[str]:
-    import time
     for attempt in range(3):
         try:
             req_start_time = time.time()
             if provider == "gemini":
-                result = call_gemini(batch, target_language, model, api_key)
+                result = call_gemini(batch, target_language, model, api_key, client)
             else:
-                result = call_openai_chat(batch, target_language, provider, model, api_key, base_url, logs)
+                result = call_openai_chat(batch, target_language, provider, model, api_key, base_url, logs, client)
             
             req_elapsed = time.time() - req_start_time
             logs.append(f"Provider responded in {req_elapsed:.2f}s for {len(batch)} cell(s).")
@@ -392,7 +911,6 @@ def translate_batch_with_split_retry(
         except ProviderRequestError as exc:
             if exc.status_code == 429 and attempt < 2:
                 logs.append(f"Rate limit (429) on {len(batch)} cells. Sleeping 25s before retry {attempt+1}/3...")
-                import time
                 time.sleep(25)
                 continue
             raise
@@ -411,6 +929,7 @@ def translate_batch_with_split_retry(
         api_key=api_key,
         base_url=base_url,
         logs=logs,
+        client=client,
     )
     second = translate_batch_with_split_retry(
         batch=batch[midpoint:],
@@ -420,6 +939,7 @@ def translate_batch_with_split_retry(
         api_key=api_key,
         base_url=base_url,
         logs=logs,
+        client=client,
     )
     return first + second
 
@@ -454,6 +974,7 @@ def call_openai_chat(
     api_key: str,
     base_url: str,
     logs: list[str],
+    client: Any,
 ) -> list[str]:
     chat_url = "https://api.openai.com/v1/chat/completions"
     models_url = "https://api.openai.com/v1/models"
@@ -485,11 +1006,11 @@ def call_openai_chat(
         ],
     }
     try:
-        data = post_json(chat_url, payload, api_key)
+        data = post_json(chat_url, payload, api_key, client)
     except ProviderRequestError as exc:
         if provider != "aishop24h" or exc.provider_code not in {"model_not_available", "model_not_found"}:
             raise
-        available_models = list_openai_compatible_models(models_url, api_key)
+        available_models = list_openai_compatible_models(models_url, api_key, client)
         fallback_model = pick_fallback_model(available_models)
         if not fallback_model:
             raise TranslationError(
@@ -497,12 +1018,12 @@ def call_openai_chat(
             ) from exc
         logs.append(f"Model '{model}' is not available. Retrying with '{fallback_model}'.")
         payload["model"] = fallback_model
-        data = post_json(chat_url, payload, api_key)
+        data = post_json(chat_url, payload, api_key, client)
     content = extract_completion_text(data)
     return parse_translations(content)
 
 
-def call_gemini(texts: list[str], target_language: str, model: str, api_key: str) -> list[str]:
+def call_gemini(texts: list[str], target_language: str, model: str, api_key: str, client: Any) -> list[str]:
     encoded_model = urllib.parse.quote(model, safe="")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{encoded_model}:generateContent?key={api_key}"
     payload = {
@@ -521,7 +1042,7 @@ def call_gemini(texts: list[str], target_language: str, model: str, api_key: str
         ],
         "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
     }
-    data = post_json(url, payload, None)
+    data = post_json(url, payload, None, client)
     content = data["candidates"][0]["content"]["parts"][0]["text"]
     return parse_translations(content)
 
@@ -541,7 +1062,7 @@ def build_prompt(texts: list[str], target_language: str) -> str:
     )
 
 
-def post_json(url: str, payload: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+def post_json(url: str, payload: dict[str, Any], api_key: str | None, client: Any) -> dict[str, Any]:
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -549,42 +1070,37 @@ def post_json(url: str, payload: dict[str, Any], api_key: str | None) -> dict[st
     }
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise ProviderRequestError(exc.code, detail) from exc
-    except urllib.error.URLError as exc:
+        response = client.post(url, headers=headers, json=payload)
+        if response.status_code >= 400:
+            raise ProviderRequestError(response.status_code, response.text)
+        return response.json()
+    except ProviderRequestError:
+        raise
+    except Exception as exc:
         raise TranslationError(f"Provider request failed: {exc}") from exc
 
 
-def get_json(url: str, api_key: str | None) -> dict[str, Any]:
+def get_json(url: str, api_key: str | None, client: Any) -> dict[str, Any]:
     headers = {
         "Accept": "application/json",
         "User-Agent": "QuickMediaTools/1.0 (+https://localhost)",
     }
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, headers=headers, method="GET")
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise ProviderRequestError(exc.code, detail) from exc
-    except urllib.error.URLError as exc:
+        response = client.get(url, headers=headers)
+        if response.status_code >= 400:
+            raise ProviderRequestError(response.status_code, response.text)
+        return response.json()
+    except ProviderRequestError:
+        raise
+    except Exception as exc:
         raise TranslationError(f"Provider request failed: {exc}") from exc
 
 
-def list_openai_compatible_models(url: str, api_key: str) -> list[str]:
-    data = get_json(url, api_key)
+def list_openai_compatible_models(url: str, api_key: str, client: Any) -> list[str]:
+    data = get_json(url, api_key, client)
     models = data.get("data", [])
     ids = []
     for model in models:

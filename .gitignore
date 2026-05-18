@@ -4,6 +4,7 @@ __pycache__/
 .env
 storage/downloads/*
 storage/processed/*
+storage/translation_cache.sqlite
 !storage/downloads/.gitkeep
 !storage/processed/.gitkeep
 vendor/ffmpeg-download/

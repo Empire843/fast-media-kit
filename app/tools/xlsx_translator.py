@@ -203,6 +203,7 @@ def convert_workbook_to_markdown_rag(
     model: str = "",
     api_key: str = "",
     base_url: str = "",
+    max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> tuple[str, list[Path], Path | None, list[dict[str, Any]], list[str]]:
     if convert_mode not in {"fast", "pro"}:
         raise TranslationError(f"Unsupported convert mode: {convert_mode}")
@@ -235,35 +236,67 @@ def convert_workbook_to_markdown_rag(
         output_paths: list[Path] = []
         processed_sheets: list[dict[str, Any]] = []
         used_names: set[str] = set()
+        sheet_outputs: list[dict[str, Any]] = []
         for sheet_name in targets:
             sheet = workbook[sheet_name]
             rows, row_count, column_count = sheet_to_rows(sheet)
             markdown = markdown_from_rows(sheet_name, rows, column_count)
-            if convert_mode == "pro":
-                markdown = refactor_markdown_layout_with_ai(
-                    sheet_name=sheet_name,
-                    rows=rows,
-                    fallback_markdown=markdown,
-                    provider=provider,
-                    model=model,
-                    api_key=api_key,
-                    base_url=base_url,
-                    logs=logs,
-                )
             filename = unique_filename(f"{slugify(sheet_name) or 'sheet'}.md", used_names)
+            sheet_outputs.append(
+                {
+                    "name": sheet_name,
+                    "rows": rows,
+                    "row_count": row_count,
+                    "column_count": column_count,
+                    "markdown": markdown,
+                    "filename": filename,
+                }
+            )
+
+        if convert_mode == "pro" and sheet_outputs:
+            worker_count = max(1, min(max_workers, len(sheet_outputs)))
+            logs.append(f"Pro AI parallel workers: {worker_count}.")
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                futures = {
+                    executor.submit(
+                        refactor_markdown_layout_with_ai,
+                        sheet_name=sheet_output["name"],
+                        rows=sheet_output["rows"],
+                        fallback_markdown=sheet_output["markdown"],
+                        provider=provider,
+                        model=model,
+                        api_key=api_key,
+                        base_url=base_url,
+                        logs=logs,
+                    ): sheet_output
+                    for sheet_output in sheet_outputs
+                }
+                for future in as_completed(futures):
+                    sheet_output = futures[future]
+                    try:
+                        sheet_output["markdown"] = future.result()
+                    except Exception as exc:
+                        logs.append(
+                            f"Sheet '{sheet_output['name']}': Pro worker failed ({exc}); used Fast layout."
+                        )
+
+        for sheet_output in sheet_outputs:
+            markdown = sheet_output["markdown"]
+            filename = sheet_output["filename"]
             output_path = job_dir / filename
             output_path.write_text(markdown, encoding="utf-8", newline="\n")
             output_paths.append(output_path)
             processed_sheets.append(
                 {
-                    "name": sheet_name,
-                    "rows": row_count,
-                    "columns": column_count,
+                    "name": sheet_output["name"],
+                    "rows": sheet_output["row_count"],
+                    "columns": sheet_output["column_count"],
                     "filename": filename,
                 }
             )
             logs.append(
-                f"Sheet '{sheet_name}': exported {row_count} row(s) x {column_count} column(s) to {filename}."
+                f"Sheet '{sheet_output['name']}': exported {sheet_output['row_count']} row(s) x "
+                f"{sheet_output['column_count']} column(s) to {filename}."
             )
 
         zip_path = None

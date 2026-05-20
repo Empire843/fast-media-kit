@@ -341,6 +341,7 @@ async def xlsx_to_markdown_tool(
     model: str = Form(""),
     api_key: str = Form(""),
     base_url: str = Form(DEFAULT_TRANSLATION_BASE_URL),
+    max_workers: int = Form(DEFAULT_MAX_WORKERS),
 ):
     logs = []
     try:
@@ -368,6 +369,7 @@ async def xlsx_to_markdown_tool(
             model=effective_model,
             api_key=effective_key,
             base_url=base_url.strip(),
+            max_workers=max_workers,
         )
         logs.extend(convert_logs)
     except Exception as exc:

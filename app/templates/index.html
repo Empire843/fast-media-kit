@@ -434,6 +434,11 @@
                   <div class="form-group"><label for="rag-base-url">Base URL</label><input id="rag-base-url" name="base_url"
                       value="{{ translation_default_base_url }}" /></div>
                 </div>
+                <div class="form-group">
+                  <label for="rag-workers">AI workers</label>
+                  <input id="rag-workers" type="number" name="max_workers" value="{{ translation_default_max_workers }}" min="1" max="20" />
+                  <span class="field-help">Higher values process more sheets in parallel, but may hit provider rate limits.</span>
+                </div>
               </div>
             </div>
             <div id="xlsx-markdown-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>

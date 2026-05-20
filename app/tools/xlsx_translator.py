@@ -198,14 +198,29 @@ def convert_workbook_to_markdown_rag(
     xlsx_bytes: bytes,
     original_name: str,
     selected_sheets: list[str],
+    convert_mode: str = "fast",
+    provider: str = "aishop24h",
+    model: str = "",
+    api_key: str = "",
+    base_url: str = "",
 ) -> tuple[str, list[Path], Path | None, list[dict[str, Any]], list[str]]:
+    if convert_mode not in {"fast", "pro"}:
+        raise TranslationError(f"Unsupported convert mode: {convert_mode}")
+
     start_time = time.time()
     logs = [
         "Engine: XLSX to Markdown RAG",
-        "Mode: preserve workbook content; layout only is converted to Markdown tables.",
+        f"Mode: {'AI layout refactor' if convert_mode == 'pro' else 'fast code conversion'}.",
     ]
+    if convert_mode == "pro":
+        if provider not in PROVIDERS:
+            raise TranslationError(f"Unsupported provider: {provider}")
+        if not api_key:
+            raise TranslationError("Missing API key for Convert Pro.")
+        logs.append(f"AI provider: {PROVIDERS[provider]}")
+        logs.append(f"AI model: {model}")
 
-    workbook = load_workbook(io.BytesIO(xlsx_bytes), data_only=False, read_only=True)
+    workbook = load_workbook(io.BytesIO(xlsx_bytes), data_only=True, read_only=True)
     try:
         sheet_names = set(workbook.sheetnames)
         targets = selected_sheets or list(workbook.sheetnames)
@@ -222,7 +237,19 @@ def convert_workbook_to_markdown_rag(
         used_names: set[str] = set()
         for sheet_name in targets:
             sheet = workbook[sheet_name]
-            markdown, row_count, column_count = sheet_to_markdown(sheet_name, sheet)
+            rows, row_count, column_count = sheet_to_rows(sheet)
+            markdown = markdown_from_rows(sheet_name, rows, column_count)
+            if convert_mode == "pro":
+                markdown = refactor_markdown_layout_with_ai(
+                    sheet_name=sheet_name,
+                    rows=rows,
+                    fallback_markdown=markdown,
+                    provider=provider,
+                    model=model,
+                    api_key=api_key,
+                    base_url=base_url,
+                    logs=logs,
+                )
             filename = unique_filename(f"{slugify(sheet_name) or 'sheet'}.md", used_names)
             output_path = job_dir / filename
             output_path.write_text(markdown, encoding="utf-8", newline="\n")
@@ -254,7 +281,7 @@ def convert_workbook_to_markdown_rag(
         workbook.close()
 
 
-def sheet_to_markdown(sheet_name: str, sheet: Any) -> tuple[str, int, int]:
+def sheet_to_rows(sheet: Any) -> tuple[list[list[str]], int, int]:
     reset = getattr(sheet, "reset_dimensions", None)
     if callable(reset):
         reset()
@@ -277,6 +304,15 @@ def sheet_to_markdown(sheet_name: str, sheet: Any) -> tuple[str, int, int]:
 
     row_count = len(rows)
     column_count = max(max_column, 1)
+    return rows, row_count, column_count
+
+
+def sheet_to_markdown(sheet_name: str, sheet: Any) -> tuple[str, int, int]:
+    rows, row_count, column_count = sheet_to_rows(sheet)
+    return markdown_from_rows(sheet_name, rows, column_count), row_count, column_count
+
+
+def markdown_from_rows(sheet_name: str, rows: list[list[str]], column_count: int) -> str:
     headers = [column_label(index) for index in range(1, column_count + 1)]
     lines = [
         f"# Sheet: {escape_markdown_heading(sheet_name)}",
@@ -289,7 +325,152 @@ def sheet_to_markdown(sheet_name: str, sheet: Any) -> tuple[str, int, int]:
         values = [escape_markdown_table_cell(value) for value in padded]
         lines.append("|" + "|".join(values) + "|")
     lines.append("")
-    return "\n".join(lines), row_count, column_count
+    return "\n".join(lines)
+
+
+def refactor_markdown_layout_with_ai(
+    *,
+    sheet_name: str,
+    rows: list[list[str]],
+    fallback_markdown: str,
+    provider: str,
+    model: str,
+    api_key: str,
+    base_url: str,
+    logs: list[str],
+) -> str:
+    source_texts = [value for row in rows for value in row if value.strip()]
+    if not source_texts:
+        logs.append(f"Sheet '{sheet_name}': Pro skipped because the sheet has no text content.")
+        return fallback_markdown
+
+    prompt = build_markdown_layout_prompt(sheet_name, rows)
+    if len(prompt) > DEFAULT_MAX_CHARS:
+        logs.append(
+            f"Sheet '{sheet_name}': Pro skipped because extracted content is too large for one AI layout request."
+        )
+        return fallback_markdown
+
+    try:
+        markdown = call_markdown_layout_ai(
+            prompt=prompt,
+            provider=provider,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+        )
+    except Exception as exc:
+        logs.append(f"Sheet '{sheet_name}': Pro failed ({exc}); used Fast layout.")
+        return fallback_markdown
+
+    missing = missing_source_texts(source_texts, markdown)
+    if missing:
+        preview = ", ".join(repr(item[:80]) for item in missing[:5])
+        logs.append(
+            f"Sheet '{sheet_name}': Pro validation failed; missing {len(missing)} source value(s): {preview}. "
+            "Used Fast layout."
+        )
+        return fallback_markdown
+
+    logs.append(f"Sheet '{sheet_name}': Pro layout applied and content validation passed.")
+    return ensure_markdown_trailing_newline(markdown)
+
+
+def build_markdown_layout_prompt(sheet_name: str, rows: list[list[str]]) -> str:
+    return json.dumps(
+        {
+            "instruction": (
+                "Convert the spreadsheet data to clean, readable Markdown for RAG ingestion. "
+                "You may change layout using headings, lists, and tables, but you must preserve every non-empty cell value exactly. "
+                "Do not translate, summarize, rewrite, infer, add explanations, or remove values. "
+                "Return JSON only with a single string field named markdown."
+            ),
+            "sheet_name": sheet_name,
+            "rows": rows,
+            "output_schema": {"markdown": "# readable markdown"},
+        },
+        ensure_ascii=False,
+    )
+
+
+def call_markdown_layout_ai(
+    *,
+    prompt: str,
+    provider: str,
+    model: str,
+    api_key: str,
+    base_url: str,
+) -> str:
+    import httpx
+
+    timeout = httpx.Timeout(130.0, connect=30.0)
+    with httpx.Client(timeout=timeout) as client:
+        if provider == "gemini":
+            encoded_model = urllib.parse.quote(model, safe="")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{encoded_model}:generateContent?key={api_key}"
+            payload = {
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
+            }
+            data = post_json(url, payload, None, client)
+            content = data["candidates"][0]["content"]["parts"][0]["text"]
+        else:
+            chat_url = "https://api.openai.com/v1/chat/completions"
+            if provider == "aishop24h":
+                chat_url = "https://aishop24h.com/v1/chat/completions"
+                if base_url.strip():
+                    chat_url = f"{base_url.rstrip('/')}/chat/completions"
+            elif provider == "openai_compatible":
+                if not base_url.strip():
+                    raise TranslationError("Base URL is required for OpenAI-compatible providers.")
+                chat_url = f"{base_url.rstrip('/')}/chat/completions"
+
+            payload = {
+                "model": model,
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You restructure spreadsheet content into Markdown. Preserve every source value exactly; "
+                            "do not translate, summarize, rewrite, infer, add facts, or omit content."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+            }
+            data = post_json(chat_url, payload, api_key, client)
+            content = extract_completion_text(data)
+
+    cleaned = content.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    parsed = json.loads(cleaned)
+    markdown = parsed.get("markdown")
+    if not isinstance(markdown, str) or not markdown.strip():
+        raise TranslationError("AI returned invalid Markdown layout JSON.")
+    return markdown
+
+
+def missing_source_texts(source_texts: list[str], markdown: str) -> list[str]:
+    haystack = normalize_markdown_presence_text(markdown)
+    missing: list[str] = []
+    for text in dict.fromkeys(source_texts):
+        needle = normalize_markdown_presence_text(text)
+        if needle and needle not in haystack:
+            missing.append(text)
+    return missing
+
+
+def normalize_markdown_presence_text(value: str) -> str:
+    value = value.replace("\\|", "|").replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def ensure_markdown_trailing_newline(value: str) -> str:
+    return value if value.endswith("\n") else value + "\n"
 
 
 def cell_to_text(cell: Any) -> str:

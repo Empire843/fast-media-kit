@@ -390,6 +390,52 @@
                 placeholder="https://docs.google.com/spreadsheets/d/..." />
               <span class="field-help">Use a public/exportable Google Sheet URL, or upload an XLSX file above.</span>
             </div>
+            <div class="form-group">
+              <span class="field-label">Convert mode</span>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="convert_mode" value="fast" checked />
+                  <span>Fast</span>
+                </label>
+                <label>
+                  <input type="radio" name="convert_mode" value="pro" />
+                  <span>Pro AI</span>
+                </label>
+              </div>
+              <span class="field-help">Fast uses code only. Pro AI refactors layout, then validates that source cell values are still present.</span>
+            </div>
+            <button class="advanced-toggle" type="button" data-toggle-advanced>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Pro AI settings
+            </button>
+            <div class="advanced-content" data-advanced-content>
+              <div class="provider-box">
+                <div class="provider-header">
+                  <div><strong>Provider</strong><span>Used only when Convert mode is Pro AI</span></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label for="rag-prov">Provider</label><select id="rag-prov" name="provider"
+                      data-provider-select>{% for value, label in translation_providers.items() %}<option
+                        value="{{ value }}" {{ 'selected' if value==translation_default_provider else '' }}>{{ label }}
+                      </option>{% endfor %}</select></div>
+                  <div class="form-group"><label for="rag-model">Model</label><input id="rag-model" name="model"
+                      value="{{ translation_default_model }}" data-model-input /></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="rag-key">API key</label><span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default key.' }}</span>
+                    <input id="rag-key" name="api_key" type="password"
+                      placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key for Pro AI' }}"
+                      autocomplete="off" />
+                  </div>
+                  <div class="form-group"><label for="rag-base-url">Base URL</label><input id="rag-base-url" name="base_url"
+                      value="{{ translation_default_base_url }}" /></div>
+                </div>
+              </div>
+            </div>
             <div id="xlsx-markdown-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
             <div class="btn-row"><button class="btn btn-primary" type="submit">Convert to Markdown</button></div>
           </form>

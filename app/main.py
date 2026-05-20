@@ -336,9 +336,16 @@ async def xlsx_to_markdown_tool(
     workbook: UploadFile | None = File(None),
     google_sheet_url: str = Form(""),
     selected_sheets: list[str] | None = Form(default=None),
+    convert_mode: str = Form("fast"),
+    provider: str = Form(DEFAULT_TRANSLATION_PROVIDER),
+    model: str = Form(""),
+    api_key: str = Form(""),
+    base_url: str = Form(DEFAULT_TRANSLATION_BASE_URL),
 ):
     logs = []
     try:
+        effective_model = model.strip() or get_default_translation_model(provider)
+        effective_key = api_key.strip() or get_default_translation_key(provider)
         url = google_sheet_url.strip()
         if url:
             xlsx_bytes, original_name = download_google_sheet_as_xlsx(url)
@@ -356,6 +363,11 @@ async def xlsx_to_markdown_tool(
             xlsx_bytes=xlsx_bytes,
             original_name=original_name,
             selected_sheets=selected,
+            convert_mode=convert_mode,
+            provider=provider,
+            model=effective_model,
+            api_key=effective_key,
+            base_url=base_url.strip(),
         )
         logs.extend(convert_logs)
     except Exception as exc:

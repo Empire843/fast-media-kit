@@ -222,9 +222,7 @@ def convert_workbook_to_markdown_rag(
         used_names: set[str] = set()
         for sheet_name in targets:
             sheet = workbook[sheet_name]
-            row_count = sheet.max_row
-            column_count = sheet.max_column
-            markdown = sheet_to_markdown(sheet_name, sheet)
+            markdown, row_count, column_count = sheet_to_markdown(sheet_name, sheet)
             filename = unique_filename(f"{slugify(sheet_name) or 'sheet'}.md", used_names)
             output_path = job_dir / filename
             output_path.write_text(markdown, encoding="utf-8", newline="\n")
@@ -256,21 +254,42 @@ def convert_workbook_to_markdown_rag(
         workbook.close()
 
 
-def sheet_to_markdown(sheet_name: str, sheet: Any) -> str:
-    max_row = sheet.max_row or 1
-    max_column = sheet.max_column or 1
-    headers = [column_label(index) for index in range(1, max_column + 1)]
+def sheet_to_markdown(sheet_name: str, sheet: Any) -> tuple[str, int, int]:
+    reset = getattr(sheet, "reset_dimensions", None)
+    if callable(reset):
+        reset()
+
+    rows: list[list[str]] = []
+    max_column = 0
+    for row in sheet.iter_rows():
+        values = [cell_to_text(cell) for cell in row]
+        while values and values[-1] == "":
+            values.pop()
+        rows.append(values)
+        max_column = max(max_column, len(values))
+
+    while rows and not any(rows[-1]):
+        rows.pop()
+
+    if not rows:
+        rows = [[""]]
+        max_column = 1
+
+    row_count = len(rows)
+    column_count = max(max_column, 1)
+    headers = [column_label(index) for index in range(1, column_count + 1)]
     lines = [
         f"# Sheet: {escape_markdown_heading(sheet_name)}",
         "",
         "|" + "|".join(escape_markdown_table_cell(header) for header in headers) + "|",
         "|" + "|".join("---" for _ in headers) + "|",
     ]
-    for row in sheet.iter_rows(min_row=1, max_row=max_row, max_col=max_column):
-        values = [escape_markdown_table_cell(cell_to_text(cell)) for cell in row]
+    for row in rows:
+        padded = row + [""] * (column_count - len(row))
+        values = [escape_markdown_table_cell(value) for value in padded]
         lines.append("|" + "|".join(values) + "|")
     lines.append("")
-    return "\n".join(lines)
+    return "\n".join(lines), row_count, column_count
 
 
 def cell_to_text(cell: Any) -> str:

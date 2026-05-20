@@ -94,6 +94,17 @@
             </svg>
             Translate XLSX
           </button>
+          <button class="nav-tool {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-tool="xlsx-markdown"
+            data-search-text="xlsx excel google sheet markdown rag">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <path d="M8 13h8" />
+              <path d="M8 17h5" />
+            </svg>
+            XLSX to Markdown
+          </button>
         </div>
       </div>
 
@@ -151,7 +162,7 @@
   <!-- WORKSPACES -->
   <main>
     <!-- Download Video -->
-    <section class="workspace active" data-workspace="download">
+    <section class="workspace {{ 'active' if active_tool == 'download' else '' }}" data-workspace="download">
       <header class="workspace-header">
         <button class="sidebar-toggle" id="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -247,7 +258,7 @@
     </section>
 
     <!-- Translate XLSX -->
-    <section class="workspace" data-workspace="translate">
+    <section class="workspace {{ 'active' if active_tool == 'translate' else '' }}" data-workspace="translate">
       <header class="workspace-header">
         <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -338,6 +349,63 @@
                 </svg></div>
               <h4>Ready to translate</h4>
               <p>Upload an XLSX file — results appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- XLSX to Markdown RAG -->
+    <section class="workspace {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-workspace="xlsx-markdown">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">RAG export</span>
+          <h2>XLSX to Markdown</h2>
+        </div>
+        <span class="workspace-chip">One Markdown file per sheet</span>
+      </header>
+      <div class="split-view">
+        <div class="form-panel">
+          <form class="form-stack" data-async-form data-target="#xlsx-markdown-result" action="/tools/xlsx-to-markdown"
+            method="post" enctype="multipart/form-data">
+            <div class="drop-zone" data-drop-zone="workbook" data-sheet-loader data-sheet-target="#xlsx-markdown-sheet-list">
+              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg></div>
+              <div class="drop-zone-text">Drop <strong>.xlsx file</strong> or click to browse</div>
+              <input name="workbook" type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+            </div>
+            <div class="form-group">
+              <label for="google-sheet-url">Google Sheet URL</label>
+              <input id="google-sheet-url" name="google_sheet_url" type="url"
+                placeholder="https://docs.google.com/spreadsheets/d/..." />
+              <span class="field-help">Use a public/exportable Google Sheet URL, or upload an XLSX file above.</span>
+            </div>
+            <div id="xlsx-markdown-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Convert to Markdown</button></div>
+          </form>
+        </div>
+        <div class="result-panel">
+          <div id="xlsx-markdown-result" class="result-zone">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <path d="M8 13h8" />
+                  <path d="M8 17h5" />
+                </svg></div>
+              <h4>Ready to convert</h4>
+              <p>Upload XLSX or paste a Google Sheet URL.</p>
             </div>
           </div>
         </div>

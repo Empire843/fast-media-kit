@@ -13,6 +13,8 @@ import urllib.parse
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime, time as datetime_time
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
@@ -146,6 +148,178 @@ def list_sheet_names(xlsx_bytes: bytes) -> list[str]:
         return list(workbook.sheetnames)
     finally:
         workbook.close()
+
+
+def download_google_sheet_as_xlsx(url: str) -> tuple[bytes, str]:
+    spreadsheet_id = extract_google_spreadsheet_id(url)
+    if not spreadsheet_id:
+        raise TranslationError("URL Google Sheet khong hop le.")
+
+    export_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xlsx"
+
+    import httpx
+
+    try:
+        with httpx.Client(timeout=httpx.Timeout(60.0, connect=20.0), follow_redirects=True) as client:
+            response = client.get(export_url)
+    except Exception as exc:
+        raise TranslationError(f"Khong tai duoc Google Sheet: {exc}") from exc
+
+    content_type = response.headers.get("content-type", "")
+    if response.status_code >= 400:
+        raise TranslationError(f"Khong tai duoc Google Sheet ({response.status_code}).")
+    if "text/html" in content_type.lower():
+        raise TranslationError("Google Sheet chua public hoac can dang nhap de export.")
+
+    data = response.content
+    if not zipfile.is_zipfile(io.BytesIO(data)):
+        raise TranslationError("Google Sheet export khong tra ve file XLSX hop le.")
+    return data, f"google_sheet_{spreadsheet_id}.xlsx"
+
+
+def extract_google_spreadsheet_id(url: str) -> str:
+    url = url.strip()
+    match = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", url)
+    if match:
+        return match.group(1)
+    parsed = urllib.parse.urlparse(url)
+    query = urllib.parse.parse_qs(parsed.query)
+    for key in ("id", "spreadsheetId"):
+        values = query.get(key)
+        if values and re.fullmatch(r"[a-zA-Z0-9-_]+", values[0]):
+            return values[0]
+    if re.fullmatch(r"[a-zA-Z0-9-_]{20,}", url):
+        return url
+    return ""
+
+
+def convert_workbook_to_markdown_rag(
+    *,
+    xlsx_bytes: bytes,
+    original_name: str,
+    selected_sheets: list[str],
+) -> tuple[str, list[Path], Path | None, list[dict[str, Any]], list[str]]:
+    start_time = time.time()
+    logs = [
+        "Engine: XLSX to Markdown RAG",
+        "Mode: preserve workbook content; layout only is converted to Markdown tables.",
+    ]
+
+    workbook = load_workbook(io.BytesIO(xlsx_bytes), data_only=False, read_only=True)
+    try:
+        sheet_names = set(workbook.sheetnames)
+        targets = selected_sheets or list(workbook.sheetnames)
+        missing = [name for name in targets if name not in sheet_names]
+        if missing:
+            raise TranslationError(f"Sheet not found: {', '.join(missing)}")
+
+        job_id = uuid.uuid4().hex
+        job_dir = PROCESSED_DIR / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        output_paths: list[Path] = []
+        processed_sheets: list[dict[str, Any]] = []
+        used_names: set[str] = set()
+        for sheet_name in targets:
+            sheet = workbook[sheet_name]
+            row_count = sheet.max_row
+            column_count = sheet.max_column
+            markdown = sheet_to_markdown(sheet_name, sheet)
+            filename = unique_filename(f"{slugify(sheet_name) or 'sheet'}.md", used_names)
+            output_path = job_dir / filename
+            output_path.write_text(markdown, encoding="utf-8", newline="\n")
+            output_paths.append(output_path)
+            processed_sheets.append(
+                {
+                    "name": sheet_name,
+                    "rows": row_count,
+                    "columns": column_count,
+                    "filename": filename,
+                }
+            )
+            logs.append(
+                f"Sheet '{sheet_name}': exported {row_count} row(s) x {column_count} column(s) to {filename}."
+            )
+
+        zip_path = None
+        if len(output_paths) > 1:
+            zip_path = job_dir / f"{Path(original_name).stem}_markdown_rag.zip"
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for path in output_paths:
+                    archive.write(path, arcname=path.name)
+            logs.append(f"Created ZIP: {zip_path.name}")
+
+        logs.append(f"Done: {len(output_paths)} Markdown file(s).")
+        logs.append(f"Total execution time: {time.time() - start_time:.2f} seconds.")
+        return job_id, output_paths, zip_path, processed_sheets, logs
+    finally:
+        workbook.close()
+
+
+def sheet_to_markdown(sheet_name: str, sheet: Any) -> str:
+    max_row = sheet.max_row or 1
+    max_column = sheet.max_column or 1
+    headers = [column_label(index) for index in range(1, max_column + 1)]
+    lines = [
+        f"# Sheet: {escape_markdown_heading(sheet_name)}",
+        "",
+        "|" + "|".join(escape_markdown_table_cell(header) for header in headers) + "|",
+        "|" + "|".join("---" for _ in headers) + "|",
+    ]
+    for row in sheet.iter_rows(min_row=1, max_row=max_row, max_col=max_column):
+        values = [escape_markdown_table_cell(cell_to_text(cell)) for cell in row]
+        lines.append("|" + "|".join(values) + "|")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def cell_to_text(cell: Any) -> str:
+    value = cell.value
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.isoformat(sep=" ")
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, datetime_time):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return format(value, "f")
+    return str(value)
+
+
+def escape_markdown_heading(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("\n", " ").replace("\r", " ")
+
+
+def escape_markdown_table_cell(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("|", "\\|")
+        .replace("\r\n", "<br>")
+        .replace("\r", "<br>")
+        .replace("\n", "<br>")
+    )
+
+
+def column_label(index: int) -> str:
+    label = ""
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        label = chr(65 + remainder) + label
+    return label
+
+
+def unique_filename(filename: str, used_names: set[str]) -> str:
+    candidate = filename
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix
+    counter = 2
+    while candidate in used_names:
+        candidate = f"{stem}_{counter}{suffix}"
+        counter += 1
+    used_names.add(candidate)
+    return candidate
 
 
 def translate_workbook(

@@ -1,0 +1,37 @@
+<div class="notice success">
+  <strong>✓ XLSX converted to Markdown</strong>
+  <p>Each selected sheet was exported as a Markdown file for RAG ingestion.</p>
+</div>
+
+{% if processed_sheets %}
+  <div class="processed-sheet-list">
+    <div class="processed-sheet-head">
+      <strong>Processed sheets</strong>
+      <span>{{ processed_sheets|length }} sheet(s) completed</span>
+    </div>
+    {% for sheet in processed_sheets %}
+      <div class="processed-sheet-row">
+        <div>
+          <strong>{{ sheet.name }}</strong>
+          <span>{{ sheet.rows }} row(s) · {{ sheet.columns }} column(s)</span>
+        </div>
+        <code>{{ sheet.filename }}</code>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% include "partials/log_panel.html" %}
+
+{% if zip_path %}
+  <a class="primary-link" href="/files/processed/{{ job_id }}/{{ zip_path.name }}">Download ZIP</a>
+{% endif %}
+
+<div class="file-list">
+  {% for file in files %}
+    <a class="file-row" href="/files/processed/{{ job_id }}/{{ file.name }}">
+      <span>{{ file.name }}</span>
+      <strong>Download ↓</strong>
+    </a>
+  {% endfor %}
+</div>

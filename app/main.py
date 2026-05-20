@@ -32,6 +32,8 @@ from app.constants import (
 )
 from app.tools.xlsx_translator import (
     TranslationError,
+    convert_workbook_to_markdown_rag,
+    download_google_sheet_as_xlsx,
     list_sheet_names,
     translate_workbook,
 )
@@ -78,7 +80,7 @@ def safe_file_response(kind: str, job_id: str, filename: str) -> FileResponse:
     return FileResponse(target, filename=target.name)
 
 
-VALID_TOOLS = {"download", "translate"}
+VALID_TOOLS = {"download", "translate", "xlsx-markdown"}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -325,6 +327,54 @@ async def translate_xlsx_tool(
         request,
         "partials/xlsx_result.html",
         {"job_id": job_id, "file": output_path, "logs": logs},
+    )
+
+
+@app.post("/tools/xlsx-to-markdown", response_class=HTMLResponse)
+async def xlsx_to_markdown_tool(
+    request: Request,
+    workbook: UploadFile | None = File(None),
+    google_sheet_url: str = Form(""),
+    selected_sheets: list[str] | None = Form(default=None),
+):
+    logs = []
+    try:
+        url = google_sheet_url.strip()
+        if url:
+            xlsx_bytes, original_name = download_google_sheet_as_xlsx(url)
+            logs.append("Source: Google Sheet URL export.")
+            selected = []
+        elif workbook and workbook.filename:
+            xlsx_bytes = await workbook.read()
+            original_name = workbook.filename
+            logs.append(f"Source: uploaded XLSX file ({workbook.filename}).")
+            selected = selected_sheets or []
+        else:
+            raise TranslationError("Upload file XLSX hoac nhap URL Google Sheet.")
+
+        job_id, files, zip_path, processed_sheets, convert_logs = convert_workbook_to_markdown_rag(
+            xlsx_bytes=xlsx_bytes,
+            original_name=original_name,
+            selected_sheets=selected,
+        )
+        logs.extend(convert_logs)
+    except Exception as exc:
+        return render_partial(
+            request,
+            "partials/error.html",
+            {"message": f"Khong convert duoc XLSX sang Markdown: {exc}", "logs": logs},
+        )
+
+    return render_partial(
+        request,
+        "partials/xlsx_markdown_result.html",
+        {
+            "job_id": job_id,
+            "files": files,
+            "zip_path": zip_path,
+            "processed_sheets": processed_sheets,
+            "logs": logs,
+        },
     )
 
 

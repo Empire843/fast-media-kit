@@ -164,6 +164,16 @@ button:disabled{opacity:.5;cursor:wait;transform:none!important}
 .image-card a{display:block;margin-top:4px;color:var(--b1);font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .primary-link{display:inline-flex;align-items:center;height:38px;border-radius:var(--rs);background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;padding:0 16px;font-weight:600;font-size:13px;margin-top:12px}
 
+.processed-sheet-list{display:grid;gap:6px;margin-top:12px;border:1px solid var(--line);border-radius:var(--r);padding:12px;background:var(--card)}
+.processed-sheet-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:2px}
+.processed-sheet-head strong{font-size:12px;color:var(--text)}
+.processed-sheet-head span{font-size:11px;color:var(--muted);white-space:nowrap}
+.processed-sheet-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--rs);padding:9px 10px;background:var(--bg2)}
+.processed-sheet-row div{display:grid;gap:2px;min-width:0}
+.processed-sheet-row strong{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.processed-sheet-row span{font-size:11px;color:var(--muted)}
+.processed-sheet-row code{font-family:'Cascadia Mono',Consolas,monospace;font-size:11px;color:var(--b1);white-space:nowrap}
+
 .table-wrap{max-height:320px;margin-top:12px;overflow:auto;border:1px solid var(--line);border-radius:var(--r)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th,td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left;white-space:nowrap}

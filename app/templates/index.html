@@ -392,7 +392,7 @@
             </div>
             <div class="form-group">
               <span class="field-label">Convert mode</span>
-              <div class="segmented-control">
+              <div class="mode-toggle" role="radiogroup" aria-label="Convert mode">
                 <label>
                   <input type="radio" name="convert_mode" value="fast" checked />
                   <span>Fast</span>
@@ -402,7 +402,7 @@
                   <span>Pro AI</span>
                 </label>
               </div>
-              <span class="field-help">Fast uses code only. Pro AI refactors layout, then validates that source cell values are still present.</span>
+              <span class="field-help">Fast uses code only. Pro AI refactors layout and validates source values, so it takes longer than Fast.</span>
             </div>
             <button class="advanced-toggle" type="button" data-toggle-advanced>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  fast-media-kit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fast-media-container
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1

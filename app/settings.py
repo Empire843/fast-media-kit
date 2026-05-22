@@ -45,5 +45,8 @@ DEFAULT_AISHOP24H_API_KEY = os.getenv("AISHOP24H_API_KEY", "")
 DEFAULT_OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 DEFAULT_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+MAX_BG_WORKERS = int(os.getenv("MAX_BG_WORKERS", "1"))
+
 for directory in (DOWNLOADS_DIR, PROCESSED_DIR):
     directory.mkdir(parents=True, exist_ok=True)
+

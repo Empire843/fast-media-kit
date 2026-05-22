@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
+import gc
+import json
+import queue
+import uuid
 import zipfile
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -20,6 +26,7 @@ from app.settings import (
     DEFAULT_TRANSLATION_PROVIDER,
     PROCESSED_DIR,
     STORAGE_DIR,
+    MAX_BG_WORKERS,
 )
 from app.tools.background import MODELS, remove_background
 from app.tools.downloader import ToolRunError, download_video, has_ffmpeg, list_formats
@@ -80,7 +87,7 @@ def safe_file_response(kind: str, job_id: str, filename: str) -> FileResponse:
     return FileResponse(target, filename=target.name)
 
 
-VALID_TOOLS = {"download", "translate", "xlsx-markdown"}
+VALID_TOOLS = {"download", "translate", "background", "xlsx-markdown"}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -203,64 +210,115 @@ async def list_video_formats(
     )
 
 
-@app.post("/tools/remove-background", response_class=HTMLResponse)
+def process_single_image_worker(
+    image_bytes: bytes,
+    original_name: str,
+    model: str,
+    alpha_matting: bool,
+    job_id: str,
+) -> dict:
+    try:
+        from app.tools.background import remove_background
+        new_job_id, output_path = remove_background(
+            image_bytes=image_bytes,
+            original_name=original_name,
+            model=model,
+            alpha_matting=alpha_matting,
+            job_id=job_id,
+        )
+        gc.collect()
+        return {
+            "status": "success",
+            "filename": original_name,
+            "job_id": new_job_id,
+            "output_name": output_path.name,
+        }
+    except Exception as exc:
+        gc.collect()
+        return {
+            "status": "error",
+            "filename": original_name,
+            "error": str(exc),
+        }
+
+
+@app.post("/tools/remove-background")
 async def remove_background_tool(
     request: Request,
     images: list[UploadFile] = File(...),
     model: str = Form("isnet-general-use"),
     alpha_matting: bool = Form(False),
 ):
-    outputs: list[Path] = []
-    job_id: str | None = None
-    logs = [
-        f"Model: {model}",
-        f"Alpha matting: {'on' if alpha_matting else 'off'}",
-        f"Input files: {len(images)}",
-    ]
-    try:
-        for index, image in enumerate(images, start=1):
-            if not image.filename:
-                continue
-            logs.append(f"[{index}/{len(images)}] Processing {image.filename}")
-            job_id, output_path = remove_background(
-                image_bytes=await image.read(),
-                original_name=image.filename,
-                model=model,
-                alpha_matting=alpha_matting,
-                job_id=job_id,
-            )
-            outputs.append(output_path)
-            logs.append(f"[{index}/{len(images)}] Saved {output_path.name}")
-    except Exception as exc:
-        logs.append(f"Error: {exc}")
-        return render_partial(
-            request,
-            "partials/error.html",
-            {"message": f"Khong xoa duoc nen anh: {exc}", "logs": logs},
-        )
+    tasks = []
+    job_id = uuid.uuid4().hex
+    for img in images:
+        if not img.filename:
+            continue
+        content = await img.read()
+        tasks.append((content, img.filename))
 
-    if not job_id or not outputs:
-        return render_partial(
-            request,
-            "partials/error.html",
-            {"message": "Chua co anh hop le de xu ly.", "logs": logs},
-        )
+    if not tasks:
+        async def empty_generator():
+            yield f"data: {json.dumps({'event': 'error', 'message': 'Chua co anh hop le de xu ly.'})}\n\n"
+        return StreamingResponse(empty_generator(), media_type="text/event-stream")
 
-    zip_path = None
-    if len(outputs) > 1:
-        zip_path = PROCESSED_DIR / job_id / "background_removed.zip"
-        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for output in outputs:
-                archive.write(output, arcname=output.name)
-        logs.append(f"Created ZIP: {zip_path.name}")
+    async def event_generator():
+        yield f"data: {json.dumps({'event': 'start', 'total': len(tasks), 'job_id': job_id})}\n\n"
 
-    logs.append(f"Done: {len(outputs)} image(s).")
+        workers = min(max(1, MAX_BG_WORKERS), 10)
+        loop = asyncio.get_running_loop()
+        q = queue.Queue()
 
-    return render_partial(
-        request,
-        "partials/background_result.html",
-        {"job_id": job_id, "files": outputs, "zip_path": zip_path, "logs": logs},
-    )
+        def done_callback(fut):
+            q.put(fut)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [
+                executor.submit(
+                    process_single_image_worker,
+                    content,
+                    name,
+                    model,
+                    alpha_matting,
+                    job_id,
+                )
+                for content, name in tasks
+            ]
+
+            for f in futures:
+                f.add_done_callback(done_callback)
+
+            processed_count = 0
+            successful_outputs = []
+
+            while processed_count < len(tasks):
+                try:
+                    f = q.get_nowait()
+                    processed_count += 1
+                    try:
+                        res = f.result()
+                        if res["status"] == "success":
+                            successful_outputs.append(PROCESSED_DIR / job_id / res["output_name"])
+                        yield f"data: {json.dumps({'event': 'progress', 'result': res})}\n\n"
+                    except Exception as e:
+                        yield f"data: {json.dumps({'event': 'progress', 'result': {'status': 'error', 'filename': 'unknown', 'error': str(e)}})}\n\n"
+                except queue.Empty:
+                    await asyncio.sleep(0.05)
+                
+                gc.collect()
+
+            zip_url = None
+            if len(successful_outputs) > 1:
+                zip_path = PROCESSED_DIR / job_id / "background_removed.zip"
+                with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                    for output in successful_outputs:
+                        archive.write(output, arcname=output.name)
+                zip_url = f"/files/processed/{job_id}/{zip_path.name}"
+
+            yield f"data: {json.dumps({'event': 'complete', 'zip_url': zip_url})}\n\n"
+            gc.collect()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.post("/tools/xlsx-sheets", response_class=HTMLResponse)

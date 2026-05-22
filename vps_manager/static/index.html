@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPS Management Dashboard - Premium Edition</title>
+    <!-- Google Fonts & Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-server neon-pulse"></i>
+                <h2>VPS Control</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-line"></i> <span>Trang chủ</span>
+                </button>
+                <button class="nav-btn" data-tab="docker">
+                    <i class="fa-brands fa-docker"></i> <span>Docker Containers</span>
+                </button>
+                <button class="nav-btn" data-tab="env">
+                    <i class="fa-solid fa-sliders"></i> <span>Cấu hình .env</span>
+                </button>
+                <button class="nav-btn" data-tab="terminal">
+                    <i class="fa-solid fa-terminal"></i> <span>Terminal Lệnh</span>
+                </button>
+                <button class="nav-btn" data-tab="files">
+                    <i class="fa-solid fa-folder-open"></i> <span>Quản lý File</span>
+                </button>
+                <button class="nav-btn" data-tab="settings">
+                    <i class="fa-solid fa-gears"></i> <span>Kết nối VPS</span>
+                </button>
+            </nav>
+            
+            <div class="connection-badge status-disconnected" id="conn-badge">
+                <span class="dot"></span> <span id="conn-status-text">Chưa kết nối</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header bar -->
+            <header class="app-header">
+                <div class="header-info">
+                    <h1>VPS Management Dashboard</h1>
+                    <p id="uptime-text">Thời gian hoạt động: Đang tải...</p>
+                </div>
+                <div class="vps-info-pill" id="vps-pill">
+                    <i class="fa-solid fa-network-wired"></i> <span id="vps-ip-display">93.127.135.137</span>
+                </div>
+            </header>
+
+            <!-- TAB: Dashboard -->
+            <section class="tab-content active" id="tab-dashboard">
+                <div class="metric-grid">
+                    <!-- CPU Metric -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-microchip"></i> CPU Usage</h3>
+                            <span class="metric-value" id="cpu-val">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="cpu-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- RAM Metric -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-memory"></i> RAM Usage</h3>
+                            <span class="metric-value" id="ram-val">0 / 0 MB</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="ram-bar" style="width: 0%"></div>
+                        </div>
+                        <p class="metric-sub" id="ram-sub">Khả dụng: -- MB</p>
+                    </div>
+
+                    <!-- Disk Metric -->
+                    <div class="metric-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-hard-drive"></i> Disk Space (/)</h3>
+                            <span class="metric-value" id="disk-val">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="disk-bar" style="width: 0%"></div>
+                        </div>
+                        <p class="metric-sub" id="disk-sub">Đã dùng: -- / --</p>
+                    </div>
+                </div>
+
+                <div class="quick-status-area">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-circle-nodes"></i> Tổng quan dự án Fast Media Kit</h2>
+                    </div>
+                    <div class="fast-action-card">
+                        <div class="app-status-box">
+                            <div class="status-indicator">
+                                <div class="ping-ring"></div>
+                                <span class="indicator-dot" id="kit-status-dot"></span>
+                            </div>
+                            <div>
+                                <h3>Trạng thái Web App</h3>
+                                <p id="kit-status-text">Đang kiểm tra Docker container...</p>
+                            </div>
+                        </div>
+                        <div class="actions-group">
+                            <button class="btn btn-primary" onclick="triggerContainerAction('fast-media-container', 'start')">
+                                <i class="fa-solid fa-play"></i> Khởi chạy Web
+                            </button>
+                            <button class="btn btn-warning" onclick="triggerContainerAction('fast-media-container', 'restart')">
+                                <i class="fa-solid fa-arrows-rotate"></i> Restart Web
+                            </button>
+                            <button class="btn btn-danger" onclick="triggerContainerAction('fast-media-container', 'stop')">
+                                <i class="fa-solid fa-stop"></i> Dừng Web
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: Docker Containers -->
+            <section class="tab-content" id="tab-docker">
+                <div class="section-title-row">
+                    <h2><i class="fa-brands fa-docker"></i> Danh sách Docker Containers</h2>
+                    <button class="btn btn-secondary" onclick="loadDockerContainers()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Tên Container</th>
+                                <th>Image</th>
+                                <th>Trạng thái</th>
+                                <th>Cổng ánh xạ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docker-tbody">
+                            <tr>
+                                <td colspan="5" class="text-center">Đang tải danh sách container từ VPS...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: Environment Settings -->
+            <section class="tab-content" id="tab-env">
+                <div class="section-title-row">
+                    <h2><i class="fa-solid fa-file-signature"></i> Trình soạn thảo file cấu hình .env</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="save-env-btn">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+                        </button>
+                        <button class="btn btn-warning" id="save-restart-env-btn">
+                            <i class="fa-solid fa-rotate"></i> Lưu & Restart Docker
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="editor-container">
+                    <div class="editor-header">
+                        <span><i class="fa-solid fa-file-code"></i> ~/fast-media-kit/.env</span>
+                        <span class="badge badge-editor">Bảo mật SSH</span>
+                    </div>
+                    <textarea id="env-textarea" spellcheck="false" placeholder="# Nhập cấu hình môi trường .env tại đây..."></textarea>
+                </div>
+            </section>
+
+            <!-- TAB: Terminal execution -->
+            <section class="tab-content" id="tab-terminal">
+                <div class="section-title">
+                    <h2><i class="fa-solid fa-terminal"></i> Trình chạy lệnh VPS trực tiếp</h2>
+                    <p class="subtitle">Thực thi bất kỳ câu lệnh Linux nào trực tiếp trên VPS của bạn (chạy dưới quyền administrator).</p>
+                </div>
+                
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <div class="win-buttons">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="terminal-title">VPS Administrator Console</div>
+                    </div>
+                    <div class="terminal-body" id="term-output">
+vps-administrator@vps-zksx:~$ Kết nối thành công tới bảng điều khiển VPS.
+vps-administrator@vps-zksx:~$ Gõ lệnh của bạn vào ô bên dưới và nhấn Enter.
+                    </div>
+                    <div class="terminal-input-row">
+                        <span class="prompt">vps-administrator@vps-zksx:~$</span>
+                        <input type="text" id="term-input" placeholder="Ví dụ: docker ps, ls -la, df -h, uptime..." />
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: File Manager -->
+            <section class="tab-content" id="tab-files">
+                <div class="section-title">
+                    <h2><i class="fa-solid fa-folder-tree"></i> Trình quản lý File & Thư mục VPS</h2>
+                    <p class="subtitle">Duyệt, tạo mới, chỉnh sửa và quản lý file của bạn trực tiếp thông qua giao thức SFTP.</p>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+                    <div style="display: flex; gap: 12px; width: 100%; align-items: center;">
+                        <button class="btn btn-secondary" style="padding: 10px 16px;" id="files-up-btn">
+                            <i class="fa-solid fa-arrow-up"></i> Lên một cấp
+                        </button>
+                        <div style="flex-grow: 1; font-family: var(--font-mono); color: var(--neon-blue); font-size: 13px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 12px 18px; border-radius: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="files-current-path">
+                            /home/administrator
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="promptMkdir()">
+                            <i class="fa-solid fa-folder-plus"></i> Thư mục mới
+                        </button>
+                        <button class="btn btn-success" onclick="promptCreateFile()">
+                            <i class="fa-solid fa-file-circle-plus"></i> File mới
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadFiles(state.currentFilePath)">
+                            <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Tên File / Thư mục</th>
+                                <th>Kích thước</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="files-tbody">
+                            <tr>
+                                <td colspan="3" class="text-center">Đang tải danh sách tập tin từ VPS...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: Connection Settings -->
+            <section class="tab-content" id="tab-settings">
+                <div class="settings-card">
+                    <h2><i class="fa-solid fa-key"></i> Thiết lập cấu hình kết nối SSH VPS</h2>
+                    <p class="subtitle">Kết nối cục bộ an toàn tới VPS của bạn qua giao thức SSH.</p>
+                    
+                    <form id="settings-form">
+                        <div class="form-group-row">
+                            <div class="form-group">
+                                <label for="vps-ip">Địa chỉ IP VPS</label>
+                                <input type="text" id="vps-ip" required placeholder="93.127.135.137">
+                            </div>
+                            <div class="form-group small-group">
+                                <label for="vps-port">Cổng SSH (NAT)</label>
+                                <input type="number" id="vps-port" required placeholder="10056">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="vps-user">Tên đăng nhập (Username)</label>
+                            <input type="text" id="vps-user" required placeholder="administrator">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="vps-pass">Mật khẩu SSH (Password)</label>
+                            <input type="password" id="vps-pass" placeholder="••••••••••••••••">
+                            <span class="input-tip">Để trống nếu muốn giữ nguyên mật khẩu cũ đã lưu.</span>
+                        </div>
+
+                        <div class="form-group check-group">
+                            <input type="checkbox" id="save-config-check" checked>
+                            <label for="save-config-check">Lưu cấu hình an toàn trên máy tính cá nhân này</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="connect-submit-btn">
+                            <i class="fa-solid fa-circle-nodes"></i> Kiểm tra & Lưu cấu hình
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-container"></div>
+
+    <!-- Docker Logs Modal -->
+    <div class="modal" id="logs-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-align-left"></i> Docker logs: <span id="modal-container-name">fast-media-container</span></h3>
+                <button class="close-btn" onclick="closeLogsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="logs-pre">Đang tải logs...</pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="refreshCurrentLogs()">Làm mới</button>
+                <button class="btn btn-primary" onclick="closeLogsModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit File Modal -->
+    <div class="modal" id="file-editor-modal">
+        <div class="modal-content" style="width: 850px; max-width: 95%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-pen"></i> Chỉnh sửa file: <span id="modal-file-name">file.txt</span></h3>
+                <button class="close-btn" onclick="closeFileEditorModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <textarea id="modal-file-textarea" spellcheck="false" style="width: 100%; height: 50vh; background: #090b11; border: 1px solid var(--glass-border); color: #a9b2c3; padding: 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; border-radius: 12px;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFileEditorModal()">Hủy</button>
+                <button class="btn btn-primary" id="save-file-content-btn">Lưu File</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -20,7 +20,7 @@ MODELS = [
 ]
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=2)
 def get_session(model: str):
     from rembg import new_session
 

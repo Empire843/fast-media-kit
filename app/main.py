@@ -8,6 +8,8 @@ import queue
 import uuid
 import zipfile
 from pathlib import Path
+import difflib
+import markdown
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
@@ -87,7 +89,7 @@ def safe_file_response(kind: str, job_id: str, filename: str) -> FileResponse:
     return FileResponse(target, filename=target.name)
 
 
-VALID_TOOLS = {"download", "translate", "background", "xlsx-markdown"}
+VALID_TOOLS = {"download", "translate", "background", "xlsx-markdown", "markdown-preview", "text-compare"}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -453,3 +455,54 @@ async def xlsx_to_markdown_tool(
 @app.get("/files/{kind}/{job_id}/{filename}")
 def files(kind: str, job_id: str, filename: str):
     return safe_file_response(kind, job_id, filename)
+
+
+@app.post("/tools/markdown-preview", response_class=HTMLResponse)
+async def markdown_preview_tool(
+    request: Request,
+    text: str = Form(""),
+):
+    try:
+        # Render markdown to HTML. extra extension adds markdown extensions like tables, code hilite, etc.
+        html_content = markdown.markdown(text, extensions=["extra"])
+    except Exception as exc:
+        return render_partial(
+            request,
+            "partials/error.html",
+            {"message": f"Khong the render Markdown: {exc}"},
+        )
+    return render_partial(
+        request,
+        "partials/markdown_preview_result.html",
+        {"html_content": html_content},
+    )
+
+
+@app.post("/tools/text-compare", response_class=HTMLResponse)
+async def text_compare_tool(
+    request: Request,
+    text_a: str = Form(""),
+    text_b: str = Form(""),
+):
+    try:
+        lines_a = text_a.splitlines()
+        lines_b = text_b.splitlines()
+        diff_generator = difflib.HtmlDiff()
+        diff_table = diff_generator.make_table(
+            lines_a, 
+            lines_b, 
+            fromdesc="Original", 
+            todesc="Modified",
+            context=False
+        )
+    except Exception as exc:
+        return render_partial(
+            request,
+            "partials/error.html",
+            {"message": f"Khong the so sanh van ban: {exc}"},
+        )
+    return render_partial(
+        request,
+        "partials/text_compare_result.html",
+        {"diff_table": diff_table},
+    )

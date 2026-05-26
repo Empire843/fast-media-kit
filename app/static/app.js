@@ -353,3 +353,63 @@ if (bgRemoveForm && bgSubmitBtn) {
   });
 }
 
+
+/* ===== MARKDOWN PREVIEW: WORD COUNTER + CLEAR + COPY HTML ===== */
+(function () {
+  const ta      = document.getElementById('markdown-text');
+  const counter = document.getElementById('md-word-count');
+  const clearBtn = document.getElementById('md-clear-btn');
+  const copyBtn  = document.getElementById('md-copy-html-btn');
+
+  if (ta && counter) {
+    const update = () => {
+      const text  = ta.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      const chars = ta.value.length;
+      counter.textContent = `${words} từ · ${chars} ký tự`;
+    };
+    ta.addEventListener('input', update);
+    update();
+  }
+
+  if (ta && clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      ta.value = '';
+      ta.dispatchEvent(new Event('input'));
+      ta.focus();
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const previewEl = document.getElementById('markdown-preview-result');
+      if (!previewEl) return;
+      const outputEl = previewEl.querySelector('.markdown-preview-output');
+      const html = outputEl ? outputEl.innerHTML : '';
+      if (!html) return;
+      navigator.clipboard.writeText(html).then(() => {
+        const prevHTML = copyBtn.innerHTML;
+        copyBtn.classList.add('copied');
+        copyBtn.textContent = '✓ Đã sao chép!';
+        setTimeout(() => { copyBtn.innerHTML = prevHTML; copyBtn.classList.remove('copied'); }, 1800);
+      });
+    });
+  }
+})();
+
+/* ===== TEXT COMPARE: LINE COUNTERS ===== */
+(function () {
+  const makeCounter = (taId, elId) => {
+    const ta = document.getElementById(taId);
+    const el = document.getElementById(elId);
+    if (!ta || !el) return;
+    const update = () => {
+      const n = ta.value ? ta.value.split('\n').length : 0;
+      el.textContent = `${n} dòng`;
+    };
+    ta.addEventListener('input', update);
+    update();
+  };
+  makeCounter('text-compare-a', 'cmp-a-count');
+  makeCounter('text-compare-b', 'cmp-b-count');
+})();

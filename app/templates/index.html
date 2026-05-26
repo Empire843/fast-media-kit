@@ -105,6 +105,28 @@
             </svg>
             XLSX to Markdown
           </button>
+          <button class="nav-tool {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-tool="markdown-preview"
+            data-search-text="markdown preview render render md view html text">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <circle cx="9" cy="15" r="1" />
+              <circle cx="15" cy="15" r="1" />
+              <polyline points="9 11 12 14 15 11" />
+            </svg>
+            Markdown Preview
+          </button>
+          <button class="nav-tool {{ 'active' if active_tool == 'text-compare' else '' }}" data-tool="text-compare"
+            data-search-text="text compare diff git match show changes difference red green">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Text Compare
+          </button>
         </div>
       </div>
 
@@ -499,7 +521,7 @@
             <div id="bg-selected-list" class="sheet-list-empty" style="max-height: 150px; overflow-y: auto;">
               No images selected.
             </div>
-
+ 
             <div class="form-row">
               <div class="form-group">
                 <label for="sel-bg-model">AI Model</label>
@@ -516,7 +538,7 @@
                 </label>
               </div>
             </div>
-
+ 
             <div class="btn-row">
               <button class="btn btn-primary" type="submit" id="bg-submit-btn">Remove background</button>
             </div>
@@ -534,6 +556,160 @@
               <h4>Ready to process</h4>
               <p>Upload images — background-removed results appear here in real-time.</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Markdown Preview -->
+    <section class="workspace {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-workspace="markdown-preview">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">Markup</span>
+          <h2>Markdown Preview</h2>
+        </div>
+        <span class="workspace-chip">Live HTML render</span>
+      </header>
+
+      <div class="md-editor-layout">
+        <!-- LEFT: Editor pane -->
+        <form class="md-editor-pane" data-async-form data-target="#markdown-preview-result" action="/tools/markdown-preview" method="post">
+          <div class="md-pane-header">
+            <div class="md-pane-label">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Editor
+            </div>
+            <span class="md-counter" id="md-word-count">0 từ · 0 ký tự</span>
+          </div>
+          <textarea id="markdown-text" name="text" class="md-editor-textarea" placeholder="# Tiêu đề 1&#10;**In đậm**, *in nghiêng*, `code`&#10;&#10;- Gạch đầu dòng 1&#10;- Gạch đầu dòng 2&#10;&#10;&gt; Trích dẫn&#10;&#10;```python&#10;print('Hello, World!')&#10;```&#10;&#10;| Cột A | Cột B |&#10;|-------|-------|&#10;| 1     | 2     |" required></textarea>
+          <div class="md-pane-footer">
+            <button class="btn btn-primary" type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              Preview
+            </button>
+            <button class="btn btn-secondary" type="button" id="md-clear-btn" title="Xoá nội dung">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+              Xoá
+            </button>
+          </div>
+        </form>
+
+        <!-- RIGHT: Preview pane -->
+        <div class="md-preview-pane">
+          <div class="md-pane-header">
+            <div class="md-pane-label">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              Preview
+            </div>
+            <button class="md-copy-btn" id="md-copy-html-btn" type="button" title="Sao chép HTML">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy HTML
+            </button>
+          </div>
+          <div id="markdown-preview-result" class="md-preview-scroll">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg></div>
+              <h4>Preview xuất hiện ở đây</h4>
+              <p>Nhập Markdown vào editor bên trái, sau đó nhấn <strong>Preview</strong>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Text Compare -->
+    <section class="workspace {{ 'active' if active_tool == 'text-compare' else '' }}" data-workspace="text-compare">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">Git Diff</span>
+          <h2>Text Compare</h2>
+        </div>
+        <span class="workspace-chip">Git-style comparison</span>
+      </header>
+
+      <div class="cmp-layout">
+        <form data-async-form data-target="#text-compare-result" action="/tools/text-compare" method="post" style="display:contents">
+          <!-- Two textareas side by side -->
+          <div class="cmp-inputs">
+            <div class="cmp-input-pane cmp-original">
+              <div class="cmp-input-header">
+                <div class="cmp-input-label">
+                  <span class="cmp-badge cmp-badge-orig">A</span>
+                  Original
+                </div>
+                <span class="cmp-line-count" id="cmp-a-count">0 dòng</span>
+              </div>
+              <textarea id="text-compare-a" name="text_a" class="cmp-textarea" placeholder="Nhập văn bản gốc tại đây..." required></textarea>
+            </div>
+            <div class="cmp-divider">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <div class="cmp-input-pane cmp-modified">
+              <div class="cmp-input-header">
+                <div class="cmp-input-label">
+                  <span class="cmp-badge cmp-badge-mod">B</span>
+                  Modified
+                </div>
+                <span class="cmp-line-count" id="cmp-b-count">0 dòng</span>
+              </div>
+              <textarea id="text-compare-b" name="text_b" class="cmp-textarea" placeholder="Nhập văn bản đã chỉnh sửa tại đây..." required></textarea>
+            </div>
+          </div>
+
+          <!-- Action bar -->
+          <div class="cmp-action-bar">
+            <button class="btn btn-primary" type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              So sánh
+            </button>
+            <div class="cmp-legend">
+              <span class="cmp-legend-item cmp-legend-add">+ Thêm mới</span>
+              <span class="cmp-legend-item cmp-legend-chg">~ Thay đổi</span>
+              <span class="cmp-legend-item cmp-legend-sub">− Xoá bỏ</span>
+            </div>
+          </div>
+        </form>
+
+        <!-- Full-width result -->
+        <div id="text-compare-result" class="cmp-result">
+          <div class="result-empty">
+            <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg></div>
+            <h4>Kết quả so sánh xuất hiện ở đây</h4>
+            <p>Nhập văn bản vào hai ô bên trên, sau đó nhấn <strong>So sánh</strong>.</p>
           </div>
         </div>
       </div>

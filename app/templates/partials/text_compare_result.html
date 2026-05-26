@@ -1,0 +1,8 @@
+<div class="notice success">
+  <strong>Text Comparison Complete</strong>
+  <p>Xem chi tiết sự khác biệt giữa hai văn bản dưới đây. Màu đỏ là nội dung bị xoá, màu xanh là nội dung được thêm mới.</p>
+</div>
+
+<div class="diff-container" style="margin-top: 16px; overflow-x: auto; width: 100%; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg2);">
+  {{ diff_table | safe }}
+</div>

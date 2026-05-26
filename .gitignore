@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+venv/
 .env
 storage/downloads/*
 storage/processed/*

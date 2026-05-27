@@ -543,6 +543,20 @@ td{color:var(--text2)}
   color: #c2410c;
   border: 1px solid rgba(0,0,0,0.05);
 }
+.markdown-preview-output mark {
+  background-color: #fef08a;
+  color: #1e293b;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.markdown-preview-output pre code mark {
+  background-color: #fde047;
+  color: #0f172a;
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-weight: normal;
+}
 .markdown-preview-output pre {
   background: var(--bg);
   padding: 12px;
@@ -649,4 +663,79 @@ td{color:var(--text2)}
   text-decoration: line-through;
   font-weight: 600;
 }
+
+/* ===== SYNTAX HIGHLIGHTING (IDE THEME) ===== */
+.codehilite {
+  background: #f8fafc !important;
+  border-radius: var(--rs);
+  padding: 14px;
+  border: 1px solid var(--line) !important;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+.codehilite pre {
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+.codehilite pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #24292e !important;
+  font-family: 'Cascadia Mono', Consolas, monospace !important;
+  font-size: 12px !important;
+}
+
+/* Specific Token Colors */
+.codehilite .c, .codehilite .c1, .codehilite .cm, .codehilite .ch, .codehilite .cp, .codehilite .cpf {
+  color: #6a737d !important;
+  font-style: italic !important;
+} /* Comments */
+
+.codehilite .k, .codehilite .kd, .codehilite .kn, .codehilite .kp, .codehilite .kr, .codehilite .kt, .codehilite .kc {
+  color: #d73a49 !important;
+  font-weight: bold !important;
+} /* Keywords */
+
+.codehilite .s, .codehilite .s1, .codehilite .s2, .codehilite .sb, .codehilite .sc, .codehilite .sd, .codehilite .se, .codehilite .sh, .codehilite .si, .codehilite .sx, .codehilite .sr, .codehilite .ss {
+  color: #032f62 !important;
+} /* Strings */
+
+.codehilite .m, .codehilite .mb, .codehilite .mf, .codehilite .mh, .codehilite .mi, .codehilite .mo, .codehilite .il {
+  color: #005cc5 !important;
+} /* Numbers */
+
+.codehilite .nf, .codehilite .fm {
+  color: #6f42c1 !important;
+} /* Functions */
+
+.codehilite .nb, .codehilite .bp {
+  color: #e36209 !important;
+} /* Builtins */
+
+.codehilite .nt {
+  color: #22863a !important;
+  font-weight: bold !important;
+} /* HTML/XML tags */
+
+.codehilite .na {
+  color: #6f42c1 !important;
+} /* HTML/XML attributes */
+
+.codehilite .nx, .codehilite .nv {
+  color: #24292e !important;
+} /* Identifiers, properties & variables */
+
+.codehilite .o, .codehilite .p {
+  color: #d73a49 !important;
+} /* Operators and punctuation */
+
+.codehilite .err {
+  border: none !important;
+  background: none !important;
+}
+
 

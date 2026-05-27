@@ -463,8 +463,15 @@ async def markdown_preview_tool(
     text: str = Form(""),
 ):
     try:
-        # Render markdown to HTML. extra extension adds markdown extensions like tables, code hilite, etc.
-        html_content = markdown.markdown(text, extensions=["extra"])
+        # Render markdown to HTML with fenced_code, codehilite and extra
+        # Support ==highlight== in code blocks and text using unicode placeholders
+        import re
+        text_marked = re.sub(r'==(?!\s)([^=]+?)(?<!\s)==', '\ue000\\g<1>\ue001', text)
+        html_content = markdown.markdown(text_marked, extensions=["fenced_code", "codehilite", "extra"])
+        
+        # Replace unicode placeholders back to HTML <mark> tags
+        html_content = re.sub(r'(?:<span class="[^\"]+">)?\ue000(?:</span>)?', '<mark>', html_content)
+        html_content = re.sub(r'(?:<span class="[^\"]+">)?\ue001(?:</span>)?', '</mark>', html_content)
     except Exception as exc:
         return render_partial(
             request,
@@ -476,6 +483,29 @@ async def markdown_preview_tool(
         "partials/markdown_preview_result.html",
         {"html_content": html_content},
     )
+
+
+@app.post("/tools/markdown-to-docx")
+async def markdown_to_docx_endpoint(
+    text: str = Form(""),
+):
+    try:
+        from app.tools.md_to_docx import convert_markdown_to_docx
+        
+        job_id = uuid.uuid4().hex
+        out_dir = PROCESSED_DIR / job_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        filename = "document.docx"
+        file_path = out_dir / filename
+        
+        convert_markdown_to_docx(text, str(file_path))
+        
+        return {
+            "status": "success",
+            "download_url": f"/files/processed/{job_id}/{filename}"
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Lỗi chuyển đổi tài liệu: {exc}")
 
 
 @app.post("/tools/text-compare", response_class=HTMLResponse)

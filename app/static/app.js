@@ -395,6 +395,89 @@ if (bgRemoveForm && bgSubmitBtn) {
       });
     });
   }
+
+  const copyGDocsBtn = document.getElementById('md-copy-gdocs-btn');
+  if (copyGDocsBtn) {
+    copyGDocsBtn.addEventListener('click', () => {
+      const previewEl = document.getElementById('markdown-preview-result');
+      if (!previewEl) return;
+      const outputEl = previewEl.querySelector('.markdown-preview-output');
+      const html = outputEl ? outputEl.innerHTML : '';
+      if (!html) return;
+      
+      const blob = new Blob([html], { type: 'text/html' });
+      const plainText = outputEl.innerText || outputEl.textContent || '';
+      const textBlob = new Blob([plainText], { type: 'text/plain' });
+      
+      const item = new ClipboardItem({
+        'text/html': blob,
+        'text/plain': textBlob
+      });
+      
+      navigator.clipboard.write([item]).then(() => {
+        const prevHTML = copyGDocsBtn.innerHTML;
+        copyGDocsBtn.classList.add('copied');
+        copyGDocsBtn.textContent = '✓ Đã sao chép!';
+        setTimeout(() => { copyGDocsBtn.innerHTML = prevHTML; copyGDocsBtn.classList.remove('copied'); }, 1800);
+      }).catch(err => {
+        console.error('Không thể copy Rich Text: ', err);
+        alert('Trình duyệt không hỗ trợ hoặc có lỗi: ' + err.message);
+      });
+    });
+  }
+
+  const downloadDocxBtn = document.getElementById('md-download-docx-btn');
+  if (downloadDocxBtn && ta) {
+    downloadDocxBtn.addEventListener('click', async () => {
+      const text = ta.value.trim();
+      if (!text) {
+        alert('Vui lòng nhập nội dung Markdown trước.');
+        return;
+      }
+      
+      const prevHTML = downloadDocxBtn.innerHTML;
+      downloadDocxBtn.disabled = true;
+      downloadDocxBtn.textContent = 'Đang tạo...';
+      
+      try {
+        const fd = new FormData();
+        fd.append('text', text);
+        
+        const res = await fetch('/tools/markdown-to-docx', {
+          method: 'POST',
+          body: fd
+        });
+        
+        if (!res.ok) {
+          throw new Error('Lỗi từ server');
+        }
+        
+        const data = await res.json();
+        if (data.status === 'success' && data.download_url) {
+          const a = document.createElement('a');
+          a.href = data.download_url;
+          a.download = 'document.docx';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          
+          downloadDocxBtn.classList.add('copied');
+          downloadDocxBtn.textContent = '✓ Hoàn thành!';
+          setTimeout(() => { 
+            downloadDocxBtn.innerHTML = prevHTML; 
+            downloadDocxBtn.classList.remove('copied'); 
+          }, 1800);
+        } else {
+          throw new Error(data.detail || 'Không thể tạo file');
+        }
+      } catch (err) {
+        alert('Có lỗi xảy ra: ' + err.message);
+        downloadDocxBtn.innerHTML = prevHTML;
+      } finally {
+        downloadDocxBtn.disabled = false;
+      }
+    });
+  }
 })();
 
 /* ===== TEXT COMPARE: LINE COUNTERS ===== */

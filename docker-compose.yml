@@ -10,8 +10,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./app:/app/app
       - ./storage:/app/storage
       - ./.env:/app/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-include "*.html" --reload-include "*.css" --reload-include "*.js"
     environment:
       - PYTHONUNBUFFERED=1
       - U2NET_HOME=/app/.u2net

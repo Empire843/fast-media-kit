@@ -525,6 +525,17 @@ async def text_compare_tool(
             todesc="Modified",
             context=False
         )
+        # Remove colgroups and diff_next columns to prevent column skew and layout misalignment
+        import re
+        diff_table = diff_table.replace('<colgroup></colgroup>', '')
+        diff_table = re.sub(r'<td class="diff_next">.*?</td>', '', diff_table, flags=re.DOTALL)
+        diff_table = re.sub(r'<th class="diff_next">.*?</th>', '', diff_table, flags=re.DOTALL)
+        # Inject our custom colgroup for the 4 remaining columns to enforce proper table-layout: fixed sizing
+        custom_colgroup = '<colgroup><col class="diff-col-num"><col class="diff-col-content"><col class="diff-col-num"><col class="diff-col-content"></colgroup>'
+        diff_table = re.sub(r'(<table[^>]*>)', r'\1' + custom_colgroup, diff_table)
+        # Inject a zero-height dummy row at the beginning of <thead> to define column widths
+        dummy_row = '<tr class="diff-dummy-row"><th class="diff-col-num"></th><th class="diff-col-content"></th><th class="diff-col-num"></th><th class="diff-col-content"></th></tr>'
+        diff_table = diff_table.replace('<thead>', '<thead>' + dummy_row)
     except Exception as exc:
         return render_partial(
             request,

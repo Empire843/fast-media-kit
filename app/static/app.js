@@ -496,3 +496,87 @@ if (bgRemoveForm && bgSubmitBtn) {
   makeCounter('text-compare-a', 'cmp-a-count');
   makeCounter('text-compare-b', 'cmp-b-count');
 })();
+
+/* ===== ADJUSTABLE SPLIT LAYOUT (RESIZABLE PANES) ===== */
+(function () {
+  let activeResizer = null;
+  let container = null;
+  let startX = 0;
+  let startWidth = 0;
+
+  document.addEventListener("mousedown", (e) => {
+    const resizer = e.target.closest("[data-resizer]");
+    if (!resizer) return;
+    
+    // Ignore dragging on mobile/stacked layouts
+    if (window.innerWidth <= 860) return;
+
+    activeResizer = resizer;
+    container = resizer.parentElement;
+    
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    resizer.classList.add("dragging");
+
+    const leftPane = container.firstElementChild;
+    startWidth = leftPane.getBoundingClientRect().width;
+    startX = e.clientX;
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!activeResizer || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    const deltaX = e.clientX - startX;
+    let newWidth = startWidth + deltaX;
+
+    const minWidth = 200;
+    const maxWidth = rect.width - 200;
+
+    if (newWidth < minWidth) newWidth = minWidth;
+    if (newWidth > maxWidth) newWidth = maxWidth;
+
+    container.style.setProperty("--split-width", `${newWidth}px`);
+  });
+
+  const stopDrag = () => {
+    if (!activeResizer) return;
+
+    const ws = container.closest("[data-workspace]");
+    if (ws) {
+      const name = ws.dataset.workspace;
+      const widthVal = container.style.getPropertyValue("--split-width");
+      if (widthVal) {
+        localStorage.setItem(`split-width-${name}`, widthVal);
+      }
+    }
+
+    activeResizer.classList.remove("dragging");
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+    activeResizer = null;
+    container = null;
+  };
+
+  document.addEventListener("mouseup", stopDrag);
+  document.addEventListener("mouseleave", stopDrag);
+
+  const initLayouts = () => {
+    document.querySelectorAll("[data-workspace]").forEach((ws) => {
+      const name = ws.dataset.workspace;
+      const saved = localStorage.getItem(`split-width-${name}`);
+      if (saved) {
+        const container = ws.querySelector(".split-view, .md-editor-layout, .cmp-inputs");
+        if (container) {
+          container.style.setProperty("--split-width", saved);
+        }
+      }
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLayouts);
+  } else {
+    initLayouts();
+  }
+})();

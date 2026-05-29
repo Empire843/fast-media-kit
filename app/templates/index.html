@@ -584,6 +584,7 @@
       <div class="md-editor-layout">
         <!-- LEFT: Editor pane -->
         <form class="md-editor-pane" data-async-form data-target="#markdown-preview-result" action="/tools/markdown-preview" method="post">
+          <input type="hidden" name="translate_to" id="markdown-translate-to" value="">
           <div class="md-pane-header">
             <div class="md-pane-label">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
@@ -621,7 +622,23 @@
               </svg>
               Preview
             </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+              <div class="md-translate-wrapper" style="display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;opacity:0.7;">
+                  <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+                </svg>
+                <span>Dịch:</span>
+                <select id="md-translate-select" style="font-size: 11px; font-weight: 600; border: none; padding: 0 4px; background: transparent; color: var(--text); cursor: pointer; outline: none; height: auto; width: auto; font-family: inherit;">
+                  <option value="">Gốc</option>
+                  <option value="vi">Tiếng Việt</option>
+                  <option value="en">Tiếng Anh</option>
+                  <option value="zh-CN">Tiếng Trung</option>
+                  <option value="ja">Tiếng Nhật</option>
+                  <option value="ko">Tiếng Hàn</option>
+                  <option value="fr">Tiếng Pháp</option>
+                  <option value="de">Tiếng Đức</option>
+                </select>
+              </div>
               <button class="md-copy-btn" id="md-copy-html-btn" type="button" title="Sao chép HTML">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>

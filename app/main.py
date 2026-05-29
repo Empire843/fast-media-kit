@@ -457,10 +457,90 @@ def files(kind: str, job_id: str, filename: str):
     return safe_file_response(kind, job_id, filename)
 
 
+from html.parser import HTMLParser
+
+class HTMLTranslator(HTMLParser):
+    def __init__(self, translate_func):
+        super().__init__()
+        self.translate_func = translate_func
+        self.result = []
+        self.ignore_depth = 0
+        self.tags_to_ignore = {"code", "pre", "script", "style"}
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.tags_to_ignore:
+            self.ignore_depth += 1
+        attr_str = "".join(f' {k}="{v}"' if v is not None else f' {k}' for k, v in attrs)
+        self.result.append(f"<{tag}{attr_str}>")
+
+    def handle_endtag(self, tag):
+        if tag in self.tags_to_ignore:
+            self.ignore_depth -= 1
+        self.result.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        if self.ignore_depth > 0 or not data.strip():
+            self.result.append(data)
+        else:
+            leading = data[:len(data) - len(data.lstrip())]
+            trailing = data[len(data.rstrip()):]
+            stripped = data.strip()
+            if stripped:
+                try:
+                    translated = self.translate_func(stripped)
+                    self.result.append(f"{leading}{translated}{trailing}")
+                except Exception:
+                    self.result.append(data)
+            else:
+                self.result.append(data)
+
+    def handle_startendtag(self, tag, attrs):
+        attr_str = "".join(f' {k}="{v}"' if v is not None else f' {k}' for k, v in attrs)
+        self.result.append(f"<{tag}{attr_str} />")
+
+    def handle_entityref(self, name):
+        self.result.append(f"&{name};")
+
+    def handle_charref(self, name):
+        self.result.append(f"&#{name};")
+
+
+def google_translate_free(text: str, target_lang: str) -> str:
+    url = "https://translate.googleapis.com/translate_a/single"
+    params = {
+        "client": "gtx",
+        "sl": "auto",
+        "tl": target_lang,
+        "dt": "t",
+        "q": text
+    }
+    import httpx
+    with httpx.Client(timeout=10.0) as client:
+        r = client.get(url, params=params)
+        r.raise_for_status()
+        data = r.json()
+        translated_sentences = []
+        if data and data[0]:
+            for sentence in data[0]:
+                if sentence and sentence[0]:
+                    translated_sentences.append(sentence[0])
+        return "".join(translated_sentences)
+
+
+def translate_html_content(html: str, target_lang: str) -> str:
+    def translate_node(text: str) -> str:
+        return google_translate_free(text, target_lang)
+    
+    parser = HTMLTranslator(translate_node)
+    parser.feed(html)
+    return "".join(parser.result)
+
+
 @app.post("/tools/markdown-preview", response_class=HTMLResponse)
 async def markdown_preview_tool(
     request: Request,
     text: str = Form(""),
+    translate_to: str = Form(""),
 ):
     try:
         # Render markdown to HTML with fenced_code, codehilite and extra
@@ -472,6 +552,10 @@ async def markdown_preview_tool(
         # Replace unicode placeholders back to HTML <mark> tags
         html_content = re.sub(r'(?:<span class="[^\"]+">)?\ue000(?:</span>)?', '<mark>', html_content)
         html_content = re.sub(r'(?:<span class="[^\"]+">)?\ue001(?:</span>)?', '</mark>', html_content)
+
+        # Apply translation if target language is selected
+        if translate_to and translate_to.strip():
+            html_content = translate_html_content(html_content, translate_to.strip())
     except Exception as exc:
         return render_partial(
             request,

@@ -380,6 +380,23 @@ if (bgRemoveForm && bgSubmitBtn) {
     });
   }
 
+  const translateSelect = document.getElementById('md-translate-select');
+  const translateInput = document.getElementById('markdown-translate-to');
+  const mdForm = ta?.closest('form');
+
+  if (translateSelect && translateInput && mdForm && ta) {
+    translateSelect.addEventListener('change', () => {
+      translateInput.value = translateSelect.value;
+      if (ta.value.trim()) {
+        if (typeof mdForm.requestSubmit === 'function') {
+          mdForm.requestSubmit();
+        } else {
+          mdForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      }
+    });
+  }
+
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const previewEl = document.getElementById('markdown-preview-result');

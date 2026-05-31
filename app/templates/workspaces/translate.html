@@ -1,0 +1,99 @@
+<section class="workspace {{ 'active' if active_tool == 'translate' else '' }}" data-workspace="translate">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">AI translation</span>
+          <h2>Translate XLSX</h2>
+        </div>
+        <span class="workspace-chip">Preserves workbook structure</span>
+      </header>
+      <div class="split-view">
+        <div class="form-panel">
+          <form class="form-stack" data-async-form data-target="#xlsx-result" action="/tools/translate-xlsx"
+            method="post" enctype="multipart/form-data">
+            <div class="drop-zone" data-drop-zone="workbook" data-sheet-loader data-sheet-target="#xlsx-sheet-list">
+              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg></div>
+              <div class="drop-zone-text">Drop <strong>.xlsx file</strong> or click to browse</div>
+              <input name="workbook" type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+            </div>
+            <div id="xlsx-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sel-lang">Target language</label>
+                <select id="sel-lang" name="target_language">{% for value, label in translation_languages %}<option
+                    value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+              </div>
+              <div class="form-group">
+                <label for="input-key">API key</label><span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default
+                  key.' }}</span>
+                <input id="input-key" name="api_key" type="password"
+                  placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key' }}"
+                  autocomplete="off" />
+              </div>
+            </div>
+            <button class="advanced-toggle" type="button" data-toggle-advanced>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Provider settings
+            </button>
+            <div class="advanced-content" data-advanced-content>
+              <div class="provider-box">
+                <div class="provider-header">
+                  <div><strong>Provider</strong><span>Default: AIShop24H</span></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label for="sel-prov">Provider</label><select id="sel-prov" name="provider"
+                      data-provider-select>{% for value, label in translation_providers.items() %}<option
+                        value="{{ value }}" {{ 'selected' if value==translation_default_provider else '' }}>{{ label }}
+                      </option>{% endfor %}</select></div>
+                  <div class="form-group"><label for="input-model">Model</label><input id="input-model" name="model"
+                      value="{{ translation_default_model }}" data-model-input /></div>
+                </div>
+                <div class="form-group"><label for="input-url2">Base URL</label><input id="input-url2" name="base_url"
+                    value="{{ translation_default_base_url }}" /><span class="field-help">AIShop24H:
+                    https://aishop24h.com/v1</span></div>
+                <div class="form-row" style="margin-top: 1rem;">
+                  <div class="form-group"><label for="input-workers">Max workers (Luồng)</label><input
+                      id="input-workers" type="number" name="max_workers" value="{{ translation_default_max_workers }}"
+                      min="1" max="20" /></div>
+                  <div class="form-group"><label for="input-items">Max items (Số ô/gói với mỗi request)</label><input
+                      id="input-items" type="number" name="max_items" value="{{ translation_default_max_items }}"
+                      min="1" max="500" /></div>
+                </div>
+              </div>
+            </div>
+            <div class="btn-row"><button class="btn btn-primary" type="submit">Translate XLSX</button></div>
+          </form>
+        </div>
+        <div class="resizer-handle" data-resizer></div>
+        <div class="result-panel">
+          <div id="xlsx-result" class="result-zone">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="m5 8 6 6" />
+                  <path d="m4 14 6-6 2-3" />
+                  <path d="M2 5h12" />
+                  <path d="M7 2h1" />
+                  <path d="m22 22-5-10-5 10" />
+                  <path d="M14 18h6" />
+                </svg></div>
+              <h4>Ready to translate</h4>
+              <p>Upload an XLSX file — results appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

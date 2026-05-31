@@ -1,0 +1,77 @@
+<section class="workspace {{ 'active' if active_tool == 'text-compare' else '' }}" data-workspace="text-compare">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">Git Diff</span>
+          <h2>Text Compare</h2>
+        </div>
+        <span class="workspace-chip">Git-style comparison</span>
+      </header>
+
+      <div class="cmp-layout">
+        <form data-async-form data-target="#text-compare-result" action="/tools/text-compare" method="post" style="display:contents">
+          <!-- Two textareas side by side -->
+          <div class="cmp-inputs">
+            <div class="cmp-input-pane cmp-original">
+              <div class="cmp-input-header">
+                <div class="cmp-input-label">
+                  <span class="cmp-badge cmp-badge-orig">A</span>
+                  Original
+                </div>
+                <span class="cmp-line-count" id="cmp-a-count">0 dòng</span>
+              </div>
+              <textarea id="text-compare-a" name="text_a" class="cmp-textarea" placeholder="Nhập văn bản gốc tại đây..." required></textarea>
+            </div>
+            <div class="cmp-divider" data-resizer>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <div class="cmp-input-pane cmp-modified">
+              <div class="cmp-input-header">
+                <div class="cmp-input-label">
+                  <span class="cmp-badge cmp-badge-mod">B</span>
+                  Modified
+                </div>
+                <span class="cmp-line-count" id="cmp-b-count">0 dòng</span>
+              </div>
+              <textarea id="text-compare-b" name="text_b" class="cmp-textarea" placeholder="Nhập văn bản đã chỉnh sửa tại đây..." required></textarea>
+            </div>
+          </div>
+
+          <!-- Action bar -->
+          <div class="cmp-action-bar">
+            <button class="btn btn-primary" type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              So sánh
+            </button>
+            <div class="cmp-legend">
+              <span class="cmp-legend-item cmp-legend-add">+ Thêm mới</span>
+              <span class="cmp-legend-item cmp-legend-chg">~ Thay đổi</span>
+              <span class="cmp-legend-item cmp-legend-sub">− Xoá bỏ</span>
+            </div>
+          </div>
+        </form>
+
+        <!-- Full-width result -->
+        <div id="text-compare-result" class="cmp-result">
+          <div class="result-empty">
+            <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg></div>
+            <h4>Kết quả so sánh xuất hiện ở đây</h4>
+            <p>Nhập văn bản vào hai ô bên trên, sau đó nhấn <strong>So sánh</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </section>

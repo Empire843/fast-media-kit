@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="landing-container">
+  <!-- Glowing Background Orbs -->
+  <div class="glow-orb glow-orb-1"></div>
+  <div class="glow-orb glow-orb-2"></div>
+
+  <!-- Landing Header -->
+  <header class="landing-header">
+    <div class="landing-logo">
+      <span class="logo-mark">Q</span>
+      <span class="logo-text">Quick Media Tools</span>
+    </div>
+    <div class="landing-status">
+      <div class="ffmpeg-badge {{ 'ok' if ffmpeg_available else 'warn' }}">
+        <span class="status-dot"></span>
+        <span class="badge-text">FFmpeg: {{ 'Sẵn sàng' if ffmpeg_available else 'Chưa cài đặt' }}</span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle-landing" data-tooltip="Chuyển giao diện">
+        <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+      <a href="/docs" target="_blank" class="api-docs-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>API Docs</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="landing-hero">
+    <div class="hero-badge">
+      <span class="badge-accent">Taste-Skill AI</span>
+      <span class="badge-divider">|</span>
+      <span>Anti-Slop Creator Suite</span>
+    </div>
+    
+    <h1 class="hero-title">
+      <span class="reveal-line">Tối Ưu Hóa Quy Trình</span>
+      <span class="reveal-line"><span class="gradient-text">Sáng Tạo Nội Dung</span> Bằng AI</span>
+    </h1>
+    
+    <p class="hero-subtitle">
+      Hợp nhất công cụ tải video, dịch thuật Excel, tách nền ảnh AI và đối soát văn bản trong một Dashboard cao cấp.
+    </p>
+
+    <div class="hero-actions">
+      <a href="/download" class="btn-gradient">
+        <span>Bắt Đầu Khám Phá</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Kinetic Marquee Section -->
+  <div class="landing-marquee">
+    <div class="marquee-track">
+      <div class="marquee-content">
+        <span>DOWNLOAD VIDEO</span>
+        <span class="marquee-separator">/</span>
+        <span>TRANSLATE XLSX</span>
+        <span class="marquee-separator">/</span>
+        <span>REMOVE BACKGROUND</span>
+        <span class="marquee-separator">/</span>
+        <span>XLSX TO MARKDOWN</span>
+        <span class="marquee-separator">/</span>
+        <span>MARKDOWN PREVIEW</span>
+        <span class="marquee-separator">/</span>
+        <span>TEXT COMPARE</span>
+        <span class="marquee-separator">/</span>
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        <span>DOWNLOAD VIDEO</span>
+        <span class="marquee-separator">/</span>
+        <span>TRANSLATE XLSX</span>
+        <span class="marquee-separator">/</span>
+        <span>REMOVE BACKGROUND</span>
+        <span class="marquee-separator">/</span>
+        <span>XLSX TO MARKDOWN</span>
+        <span class="marquee-separator">/</span>
+        <span>MARKDOWN PREVIEW</span>
+        <span class="marquee-separator">/</span>
+        <span>TEXT COMPARE</span>
+        <span class="marquee-separator">/</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Grid Section -->
+  <section class="landing-features">
+    <div class="section-header">
+      <h2 class="section-title">Các Công Cụ Tích Hợp</h2>
+      <p class="section-desc">Mọi tính năng được tối ưu hóa về tốc độ, chất lượng và trải nghiệm sử dụng cao cấp nhất.</p>
+    </div>
+
+    <!-- Category Filter Navigation -->
+    <div class="category-filter-container">
+      <div class="category-filter-nav">
+        <button class="filter-btn active" data-filter="all">Tất cả</button>
+        <button class="filter-btn" data-filter="media">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Media
+        </button>
+        <button class="filter-btn" data-filter="docs">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Tài liệu
+        </button>
+        <button class="filter-btn" data-filter="text">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Văn bản
+        </button>
+      </div>
+    </div>
+
+    <div class="features-grid bento-layout" id="features-grid">
+      <!-- Card 1: Download Video (Bento 2 cols + Emerald Glow background) -->
+      <a href="/download" class="feature-card bento-col-2 card-accent-emerald" data-category="media">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Media</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </div>
+        <h3 class="card-title">Tải Video yt-dlp</h3>
+        <p class="card-desc">Tải video chất lượng cao từ hàng loạt nền tảng (YouTube, TikTok, Facebook). Hỗ trợ tách âm thanh, cookies tùy chỉnh và hiển thị danh sách định dạng trực tiếp.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+
+      <!-- Card 2: Translate XLSX -->
+      <a href="/translate" class="feature-card" data-category="docs">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Tài liệu</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m5 8 6 6" />
+            <path d="m4 14 6-6 2-3" />
+            <path d="M2 5h12" />
+            <path d="M7 2h1" />
+            <path d="m22 22-5-10-5 10" />
+            <path d="M14 18h6" />
+          </svg>
+        </div>
+        <h3 class="card-title">Dịch Thuật XLSX</h3>
+        <p class="card-desc">Dịch thuật file bảng tính Excel đa ngôn ngữ thông qua các mô hình AI mạnh mẽ (Gemini, OpenAI). Giữ nguyên vẹn định dạng và cấu trúc ô tính của workbook gốc.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+
+      <!-- Card 3: Remove Background -->
+      <a href="/background" class="feature-card" data-category="media">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Media</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+        </div>
+        <h3 class="card-title">Tách Nền Ảnh Hàng Loạt</h3>
+        <p class="card-desc">Tự động loại bỏ nền ảnh thông minh sử dụng mô hình ONNX chất lượng cao. Hỗ trợ tách nhiều hình ảnh cùng lúc và đóng gói kết quả dạng file ZIP tiện lợi.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+
+      <!-- Card 4: XLSX to Markdown (Bento 2 cols + Cyan Glow background) -->
+      <a href="/xlsx-markdown" class="feature-card bento-col-2 card-accent-cyan" data-category="docs">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Tài liệu</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <path d="M8 13h8" />
+            <path d="M8 17h5" />
+          </svg>
+        </div>
+        <h3 class="card-title">XLSX sang Markdown</h3>
+        <p class="card-desc">Chuyển đổi dữ liệu bảng tính XLSX hoặc Google Sheet xuất sang định dạng Markdown chuẩn hóa, tối ưu cho RAG hoặc tích hợp vào hệ thống tài liệu AI.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+
+      <!-- Card 5: Markdown Preview (Bento 2 cols + Dark Grid pattern background) -->
+      <a href="/markdown-preview" class="feature-card bento-col-2 card-accent-grid" data-category="text">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Văn bản</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <circle cx="9" cy="15" r="1" />
+            <circle cx="15" cy="15" r="1" />
+            <polyline points="9 11 12 14 15 11" />
+          </svg>
+        </div>
+        <h3 class="card-title">Markdown Preview</h3>
+        <p class="card-desc">Trình soạn thảo trực quan hỗ trợ xem trước Markdown thời gian thực, đếm từ, dịch thuật nội dung và xuất sang định dạng Word (.docx) hoặc sao chép nhanh Rich Text.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+
+      <!-- Card 6: Text Compare -->
+      <a href="/text-compare" class="feature-card" data-category="text">
+        <div class="card-glow"></div>
+        <span class="card-category-badge">Văn bản</span>
+        <div class="card-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        </div>
+        <h3 class="card-title">So Sánh Văn Bản</h3>
+        <p class="card-desc">So sánh trực quan hai văn bản dòng-qua-dòng để phát hiện những khác biệt nhỏ nhất. Thích hợp cho việc đối soát kịch bản và tài liệu văn bản.</p>
+        <span class="card-link">Sử dụng ngay &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <p>&copy; 2026 Quick Media Tools. Thiết kế theo tiêu chuẩn Taste-Skill.</p>
+  </footer>
+</div>
+{% endblock %}

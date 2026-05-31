@@ -1,39 +1,127 @@
-/* ===== TOOL NAVIGATION ===== */
-document.querySelectorAll("[data-tool]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    if (btn.classList.contains("upcoming")) return;
-    document.querySelectorAll(".nav-tool").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    const name = btn.dataset.tool;
-    document.querySelectorAll("[data-workspace]").forEach((ws) => {
+(function () {
+  /* ===== TOOL NAVIGATION & TABS ===== */
+  const switchWorkspace = (name, updateHistory = true) => {
+    // Update sidebar navigation active state
+    document.querySelectorAll(".nav-tool").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tool === name);
+    });
+
+    // Update tab active state
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === name);
+    });
+
+    // Update active workspace
+    document.querySelectorAll(".workspace").forEach((ws) => {
       ws.classList.toggle("active", ws.dataset.workspace === name);
     });
+
     // Close mobile sidebar
     document.getElementById("sidebar")?.classList.remove("open");
-  });
-});
 
-/* ===== CATEGORY COLLAPSE ===== */
-document.querySelectorAll("[data-category-toggle]").forEach((label) => {
-  label.addEventListener("click", () => {
-    label.closest("[data-category]")?.classList.toggle("collapsed");
+    // Update browser URL without reloading page
+    if (updateHistory) {
+      history.pushState(null, "", "/" + name);
+    }
+  };
+
+  // Listen to browser Back/Forward navigation
+  window.addEventListener("popstate", () => {
+    const VALID_TOOLS = ["download", "translate", "background", "xlsx-markdown", "markdown-preview", "text-compare"];
+    const tool = window.location.pathname.substring(1);
+    if (VALID_TOOLS.includes(tool)) {
+      switchWorkspace(tool, false);
+    } else if (window.location.pathname === "/") {
+      window.location.reload();
+    }
   });
-});
+
+  // Attach sidebar tool click handlers
+  document.querySelectorAll(".nav-tool").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.classList.contains("upcoming")) return;
+      switchWorkspace(btn.dataset.tool);
+    });
+  });
+
+  // Attach tab click handlers
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchWorkspace(btn.dataset.tab);
+    });
+  });
+
+  /* ===== DARK/LIGHT THEME SWITCHER ===== */
+  const initThemeToggle = () => {
+    const toggleDashboard = document.getElementById("theme-toggle-dashboard");
+    const toggleLanding = document.getElementById("theme-toggle-landing");
+
+    const toggleTheme = () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    };
+
+    if (toggleDashboard) {
+      toggleDashboard.addEventListener("click", toggleTheme);
+    }
+    if (toggleLanding) {
+      toggleLanding.addEventListener("click", toggleTheme);
+    }
+  };
+  initThemeToggle();
 
 /* ===== SEARCH FILTER ===== */
-document.querySelector("[data-tool-search]")?.addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  document.querySelectorAll(".nav-tool").forEach((btn) => {
-    const text = (btn.dataset.searchText || btn.textContent || "").toLowerCase();
-    btn.hidden = q && !text.includes(q);
-  });
-  // Show all categories when searching, hide empty ones
-  document.querySelectorAll("[data-category]").forEach((cat) => {
-    cat.classList.remove("collapsed");
-    const visible = cat.querySelectorAll(".nav-tool:not([hidden])").length;
-    cat.style.display = q && !visible ? "none" : "";
-  });
-});
+const initSearchFilter = () => {
+  const searchInput = document.querySelector("[data-tool-search]");
+  if (!searchInput) return;
+
+  const filterTools = () => {
+    const q = searchInput.value.toLowerCase().trim();
+    
+    // Filter tab buttons
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      const text = btn.textContent.toLowerCase();
+      btn.style.display = (q && !text.includes(q)) ? "none" : "";
+    });
+
+    // Toggle tab group headers based on whether any child tab is visible
+    const groups = {
+      media: ["download", "background"],
+      docs: ["translate", "xlsx-markdown"],
+      text: ["markdown-preview", "text-compare"]
+    };
+    
+    Object.entries(groups).forEach(([groupName, toolNames]) => {
+      const label = document.querySelector(`.tab-group-label[data-group="${groupName}"]`);
+      if (label) {
+        const hasVisibleTab = toolNames.some(name => {
+          const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+          return btn && btn.style.display !== "none";
+        });
+        label.style.display = hasVisibleTab ? "" : "none";
+      }
+    });
+
+    // Filter sidebar tools
+    document.querySelectorAll(".nav-tool").forEach((btn) => {
+      const text = (btn.dataset.tooltip || btn.textContent || "").toLowerCase();
+      if (q && !text.includes(q)) {
+        btn.style.opacity = "0.15";
+        btn.style.pointerEvents = "none";
+      } else {
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
+      }
+    });
+  };
+
+  searchInput.addEventListener("input", filterTools);
+  // Run once to sync search state on load (in case of browser auto-fill/cache)
+  filterTools();
+};
+initSearchFilter();
 
 /* ===== MOBILE SIDEBAR ===== */
 document.querySelectorAll(".sidebar-toggle, [data-sidebar-toggle]").forEach((btn) => {
@@ -42,6 +130,38 @@ document.querySelectorAll(".sidebar-toggle, [data-sidebar-toggle]").forEach((btn
 document.getElementById("sidebar-overlay")?.addEventListener("click", () => {
   document.getElementById("sidebar")?.classList.remove("open");
 });
+
+/* ===== LANDING PAGE CATEGORY FILTER ===== */
+const initCategoryFilter = () => {
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  const cards = document.querySelectorAll(".feature-card");
+  if (!filterBtns.length || !cards.length) return;
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const filter = btn.dataset.filter;
+
+      cards.forEach((card) => {
+        const category = card.dataset.category;
+        card.classList.remove("card-fade-in");
+        
+        if (filter === "all" || category === filter) {
+          card.classList.remove("card-hidden");
+          // Trigger reflow to restart animation
+          void card.offsetWidth;
+          card.classList.add("card-fade-in");
+        } else {
+          card.classList.add("card-hidden");
+        }
+      });
+    });
+  });
+};
+initCategoryFilter();
+})();
 
 /* ===== ASYNC FORM ===== */
 document.querySelectorAll("[data-async-form]").forEach((form) => {
@@ -595,5 +715,86 @@ if (bgRemoveForm && bgSubmitBtn) {
     document.addEventListener("DOMContentLoaded", initLayouts);
   } else {
     initLayouts();
+  }
+})();
+
+/* ===== TEXT SCRAMBLE HOVER EFFECT (Kinetic Typography Style) ===== */
+(function () {
+  class TextScramble {
+    constructor(el) {
+      this.el = el;
+      this.chars = '!<>-_\\/[]{}?#*+=';
+      this.update = this.update.bind(this);
+    }
+    setText(newText) {
+      const oldText = this.el.innerText;
+      const length = Math.max(oldText.length, newText.length);
+      const promise = new Promise((resolve) => this.resolve = resolve);
+      this.queue = [];
+      for (let i = 0; i < length; i++) {
+        const from = oldText[i] || '';
+        const to = newText[i] || '';
+        const start = Math.floor(Math.random() * 20);
+        const end = start + Math.floor(Math.random() * 20);
+        this.queue.push({ from, to, start, end, char: '' });
+      }
+      cancelAnimationFrame(this.frameId);
+      this.frame = 0;
+      this.update();
+      return promise;
+    }
+    update() {
+      let output = '';
+      let complete = 0;
+      for (let i = 0, n = this.queue.length; i < n; i++) {
+        let { from, to, start, end, char } = this.queue[i];
+        if (this.frame >= end) {
+          complete++;
+          output += to;
+        } else if (this.frame >= start) {
+          if (!char || Math.random() < 0.28) {
+            char = this.randomChar();
+            this.queue[i].char = char;
+          }
+          output += `<span class="scramble-char">${char}</span>`;
+        } else {
+          output += from;
+        }
+      }
+      this.el.innerHTML = output;
+      if (complete === this.queue.length) {
+        this.resolve();
+      } else {
+        this.frameId = requestAnimationFrame(this.update);
+        this.frame++;
+      }
+    }
+    randomChar() {
+      return this.chars[Math.floor(Math.random() * this.chars.length)];
+    }
+  }
+
+  const initScramble = () => {
+    document.querySelectorAll('.feature-card').forEach((card) => {
+      const title = card.querySelector('.card-title');
+      if (!title) return;
+      const fx = new TextScramble(title);
+      const originalText = title.innerText;
+      let isAnimating = false;
+      
+      card.addEventListener('mouseenter', () => {
+        if (isAnimating) return;
+        isAnimating = true;
+        fx.setText(originalText).then(() => {
+          isAnimating = false;
+        });
+      });
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initScramble);
+  } else {
+    initScramble();
   }
 })();

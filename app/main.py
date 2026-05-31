@@ -89,19 +89,45 @@ def safe_file_response(kind: str, job_id: str, filename: str) -> FileResponse:
     return FileResponse(target, filename=target.name)
 
 
-VALID_TOOLS = {"download", "translate", "background", "xlsx-markdown", "markdown-preview", "text-compare"}
-
-
 @app.get("/", response_class=HTMLResponse)
-def dashboard_root(request: Request):
+def landing_root(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "landing.html",
+        {
+            "ffmpeg_available": has_ffmpeg(),
+        },
+    )
+
+
+@app.get("/download", response_class=HTMLResponse)
+def download_tool(request: Request):
     return _render_dashboard(request, "download")
 
 
-@app.get("/{tool}", response_class=HTMLResponse)
-def dashboard_tool(request: Request, tool: str):
-    if tool not in VALID_TOOLS:
-        raise HTTPException(status_code=404, detail="Tool not found")
-    return _render_dashboard(request, tool)
+@app.get("/translate", response_class=HTMLResponse)
+def translate_tool(request: Request):
+    return _render_dashboard(request, "translate")
+
+
+@app.get("/background", response_class=HTMLResponse)
+def background_tool(request: Request):
+    return _render_dashboard(request, "background")
+
+
+@app.get("/xlsx-markdown", response_class=HTMLResponse)
+def xlsx_markdown_tool(request: Request):
+    return _render_dashboard(request, "xlsx-markdown")
+
+
+@app.get("/markdown-preview", response_class=HTMLResponse)
+def markdown_preview_tool(request: Request):
+    return _render_dashboard(request, "markdown-preview")
+
+
+@app.get("/text-compare", response_class=HTMLResponse)
+def text_compare_tool(request: Request):
+    return _render_dashboard(request, "text-compare")
 
 
 def _render_dashboard(request: Request, active_tool: str) -> HTMLResponse:

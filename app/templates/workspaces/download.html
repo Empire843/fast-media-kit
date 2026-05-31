@@ -1,0 +1,95 @@
+<section class="workspace {{ 'active' if active_tool == 'download' else '' }}" data-workspace="download">
+      <header class="workspace-header">
+        <button class="sidebar-toggle" id="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg></button>
+        <div class="workspace-title">
+          <span class="eyebrow">yt-dlp</span>
+          <h2>Download video</h2>
+        </div>
+        <span class="workspace-chip">Facebook · TikTok · YouTube · More</span>
+      </header>
+      <div class="split-view">
+        <div class="form-panel">
+          <form class="form-stack" data-async-form data-target="#download-result" action="/tools/download-video"
+            method="post" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="input-url">Video URL</label>
+              <input id="input-url" name="url" type="url" placeholder="https://www.facebook.com/watch/?v=..."
+                required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sel-platform">Platform</label>
+                <select id="sel-platform" name="platform">
+                  <option>Facebook</option>
+                  <option>TikTok</option>
+                  <option>YouTube</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sel-quality">Quality</label>
+                <select id="sel-quality" name="quality">
+                  <option value="best">Best available</option>
+                  <option value="1080p">Up to 1080p</option>
+                  <option value="720p">Up to 720p</option>
+                  <option value="480p">Up to 480p</option>
+                  <option value="360p">Up to 360p</option>
+                  <option value="audio">Audio only</option>
+                </select>
+              </div>
+            </div>
+            <button class="advanced-toggle" type="button" data-toggle-advanced>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Advanced options
+            </button>
+            <div class="advanced-content" data-advanced-content>
+              <div class="form-group">
+                <label for="input-fmt">Custom yt-dlp format</label>
+                <input id="input-fmt" name="custom_format" placeholder="Leave empty for best quality" />
+              </div>
+              <div class="form-row">
+                <div class="drop-zone" data-drop-zone="cookies">
+                  <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg></div>
+                  <div class="drop-zone-text">Drop <strong>cookies.txt</strong> or click</div>
+                  <input name="cookies" type="file" accept=".txt" />
+                </div>
+                <label class="check-row"><input name="redownload" type="checkbox" value="true" /><span>Force
+                    redownload</span></label>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" type="submit">Download video</button>
+              <button class="btn btn-secondary" type="submit" formaction="/tools/list-formats"
+                data-target="#download-result">List formats</button>
+            </div>
+          </form>
+        </div>
+        <div class="resizer-handle" data-resizer></div>
+        <div class="result-panel">
+          <div id="download-result" class="result-zone">
+            <div class="result-empty">
+              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg></div>
+              <h4>Ready to download</h4>
+              <p>Paste a URL and hit download — results appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

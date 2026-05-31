@@ -1,759 +1,170 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
+  <!-- SLIM ICON SIDEBAR (Activity Bar) -->
+  <aside class="sidebar-slim" id="sidebar">
     <div class="sidebar-header">
-      <div class="brand">
-        <span class="logo-mark">Q</span>
-        <div>
-          <h1>Quick Media Tools</h1>
-          <p>Creator utilities</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-search">
-      <input class="search-input" type="text" placeholder="Search tools…" data-tool-search />
+      <a href="/" style="text-decoration: none;"><span class="logo-mark">Q</span></a>
     </div>
 
     <nav class="sidebar-nav">
-      <!-- Video Tools -->
-      <div class="nav-category" data-category>
-        <div class="nav-category-label" data-category-toggle>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <polyline points="6 9 12 15 18 9" />
+      <!-- Nhóm 1: Media -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Media</div>
+        <button class="nav-tool {{ 'active' if active_tool == 'download' else '' }}" data-tool="download" data-tooltip="Download video">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Video
-        </div>
-        <div class="nav-category-items">
-          <button class="nav-tool {{ 'active' if active_tool == 'download' else '' }}" data-tool="download"
-            data-search-text="download video facebook tiktok youtube">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download video
-          </button>
-          <button class="nav-tool upcoming" data-search-text="video to mp3 audio extract">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-            Video to MP3
-          </button>
-          <button class="nav-tool upcoming" data-search-text="compress video reduce size">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <polyline points="4 14 10 14 10 20" />
-              <polyline points="20 10 14 10 14 4" />
-              <line x1="14" y1="10" x2="21" y2="3" />
-              <line x1="3" y1="21" x2="10" y2="14" />
-            </svg>
-            Compress video
-          </button>
-          <button class="nav-tool upcoming" data-search-text="trim cut audio video clip">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <circle cx="6" cy="6" r="3" />
-              <circle cx="6" cy="18" r="3" />
-              <line x1="20" y1="4" x2="8.12" y2="15.88" />
-              <line x1="14.47" y1="14.48" x2="20" y2="20" />
-              <line x1="8.12" y1="8.12" x2="12" y2="12" />
-            </svg>
-            Trim audio/video
-          </button>
-        </div>
+          <span class="mobile-label">Download video</span>
+        </button>
+
+        <button class="nav-tool {{ 'active' if active_tool == 'background' else '' }}" data-tool="background" data-tooltip="Remove background">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          <span class="mobile-label">Remove background</span>
+        </button>
       </div>
 
-      <!-- Document Tools -->
-      <div class="nav-category" data-category>
-        <div class="nav-category-label" data-category-toggle>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <polyline points="6 9 12 15 18 9" />
+      <!-- Nhóm 2: Tài liệu -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Tài liệu</div>
+        <button class="nav-tool {{ 'active' if active_tool == 'translate' else '' }}" data-tool="translate" data-tooltip="Translate XLSX">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="m5 8 6 6" />
+            <path d="m4 14 6-6 2-3" />
+            <path d="M2 5h12" />
+            <path d="M7 2h1" />
+            <path d="m22 22-5-10-5 10" />
+            <path d="M14 18h6" />
           </svg>
-          Documents
-        </div>
-        <div class="nav-category-items">
-          <button class="nav-tool {{ 'active' if active_tool == 'translate' else '' }}" data-tool="translate"
-            data-search-text="translate xlsx excel workbook language">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <path d="m5 8 6 6" />
-              <path d="m4 14 6-6 2-3" />
-              <path d="M2 5h12" />
-              <path d="M7 2h1" />
-              <path d="m22 22-5-10-5 10" />
-              <path d="M14 18h6" />
-            </svg>
-            Translate XLSX
-          </button>
-          <button class="nav-tool {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-tool="xlsx-markdown"
-            data-search-text="xlsx excel google sheet markdown rag">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <path d="M8 13h8" />
-              <path d="M8 17h5" />
-            </svg>
-            XLSX to Markdown
-          </button>
-          <button class="nav-tool {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-tool="markdown-preview"
-            data-search-text="markdown preview render render md view html text">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <circle cx="9" cy="15" r="1" />
-              <circle cx="15" cy="15" r="1" />
-              <polyline points="9 11 12 14 15 11" />
-            </svg>
-            Markdown Preview
-          </button>
-          <button class="nav-tool {{ 'active' if active_tool == 'text-compare' else '' }}" data-tool="text-compare"
-            data-search-text="text compare diff git match show changes difference red green">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <line x1="18" y1="20" x2="18" y2="10" />
-              <line x1="12" y1="20" x2="12" y2="4" />
-              <line x1="6" y1="20" x2="6" y2="14" />
-            </svg>
-            Text Compare
-          </button>
-        </div>
+          <span class="mobile-label">Translate XLSX</span>
+        </button>
+
+        <button class="nav-tool {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-tool="xlsx-markdown" data-tooltip="XLSX to Markdown">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <path d="M8 13h8" />
+            <path d="M8 17h5" />
+          </svg>
+          <span class="mobile-label">XLSX to Markdown</span>
+        </button>
       </div>
 
-      <!-- Image Tools -->
-      <div class="nav-category" data-category>
-        <div class="nav-category-label" data-category-toggle>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <polyline points="6 9 12 15 18 9" />
+      <!-- Nhóm 3: Văn bản -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Văn bản</div>
+        <button class="nav-tool {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-tool="markdown-preview" data-tooltip="Markdown Preview">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <circle cx="9" cy="15" r="1" />
+            <circle cx="15" cy="15" r="1" />
+            <polyline points="9 11 12 14 15 11" />
           </svg>
-          Images
-        </div>
-        <div class="nav-category-items">
-          <button class="nav-tool {{ 'active' if active_tool == 'background' else '' }}" data-tool="background" data-search-text="remove background image transparent">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            Remove background
-          </button>
-          <button class="nav-tool upcoming" data-search-text="resize image scale dimension">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <polyline points="15 3 21 3 21 9" />
-              <polyline points="9 21 3 21 3 15" />
-              <line x1="21" y1="3" x2="14" y2="10" />
-              <line x1="3" y1="21" x2="10" y2="14" />
-            </svg>
-            Resize image
-          </button>
-          <button class="nav-tool upcoming" data-search-text="convert format webp png jpg image">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round">
-              <polyline points="16 16 12 12 8 16" />
-              <line x1="12" y1="12" x2="12" y2="21" />
-              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-            </svg>
-            Convert format
-          </button>
-        </div>
+          <span class="mobile-label">Markdown Preview</span>
+        </button>
+
+        <button class="nav-tool {{ 'active' if active_tool == 'text-compare' else '' }}" data-tool="text-compare" data-tooltip="Text Compare">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          <span class="mobile-label">Text Compare</span>
+        </button>
       </div>
     </nav>
 
     <div class="sidebar-footer">
-      <span class="status-dot {{ 'ok' if ffmpeg_available else 'warn' }}"></span>
-      <span>ffmpeg {{ 'ready' if ffmpeg_available else 'missing' }}</span>
-      <a href="/docs" target="_blank">API docs</a>
+      <div class="ffmpeg-indicator {{ 'ok' if ffmpeg_available else 'warn' }}" data-tooltip="ffmpeg {{ 'ready' if ffmpeg_available else 'missing' }}">
+        <span class="status-dot"></span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle-dashboard" data-tooltip="Chuyển giao diện">
+        <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+      <a class="docs-link" href="/docs" target="_blank" data-tooltip="API docs">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </a>
     </div>
   </aside>
 
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-  <!-- WORKSPACES -->
-  <main>
-    <!-- Download Video -->
-    <section class="workspace {{ 'active' if active_tool == 'download' else '' }}" data-workspace="download">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" id="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">yt-dlp</span>
-          <h2>Download video</h2>
-        </div>
-        <span class="workspace-chip">Facebook · TikTok · YouTube · More</span>
-      </header>
-      <div class="split-view">
-        <div class="form-panel">
-          <form class="form-stack" data-async-form data-target="#download-result" action="/tools/download-video"
-            method="post" enctype="multipart/form-data">
-            <div class="form-group">
-              <label for="input-url">Video URL</label>
-              <input id="input-url" name="url" type="url" placeholder="https://www.facebook.com/watch/?v=..."
-                required />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="sel-platform">Platform</label>
-                <select id="sel-platform" name="platform">
-                  <option>Facebook</option>
-                  <option>TikTok</option>
-                  <option>YouTube</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="sel-quality">Quality</label>
-                <select id="sel-quality" name="quality">
-                  <option value="best">Best available</option>
-                  <option value="1080p">Up to 1080p</option>
-                  <option value="720p">Up to 720p</option>
-                  <option value="480p">Up to 480p</option>
-                  <option value="360p">Up to 360p</option>
-                  <option value="audio">Audio only</option>
-                </select>
-              </div>
-            </div>
-            <button class="advanced-toggle" type="button" data-toggle-advanced>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              Advanced options
-            </button>
-            <div class="advanced-content" data-advanced-content>
-              <div class="form-group">
-                <label for="input-fmt">Custom yt-dlp format</label>
-                <input id="input-fmt" name="custom_format" placeholder="Leave empty for best quality" />
-              </div>
-              <div class="form-row">
-                <div class="drop-zone" data-drop-zone="cookies">
-                  <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg></div>
-                  <div class="drop-zone-text">Drop <strong>cookies.txt</strong> or click</div>
-                  <input name="cookies" type="file" accept=".txt" />
-                </div>
-                <label class="check-row"><input name="redownload" type="checkbox" value="true" /><span>Force
-                    redownload</span></label>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-primary" type="submit">Download video</button>
-              <button class="btn btn-secondary" type="submit" formaction="/tools/list-formats"
-                data-target="#download-result">List formats</button>
-            </div>
-          </form>
-        </div>
-        <div class="resizer-handle" data-resizer></div>
-        <div class="result-panel">
-          <div id="download-result" class="result-zone">
-            <div class="result-empty">
-              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg></div>
-              <h4>Ready to download</h4>
-              <p>Paste a URL and hit download — results appear here.</p>
-            </div>
-          </div>
-        </div>
+  <!-- MAIN APP PANEL -->
+  <main class="main-content">
+    <!-- TOP TAB BAR -->
+    <header class="tab-header">
+      <button class="sidebar-toggle" id="sidebar-toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      <div class="tab-list" id="tab-list">
+        <div class="tab-group-label" data-group="media">Media</div>
+        <button class="tab-btn {{ 'active' if active_tool == 'download' else '' }}" data-tab="download">
+          <span class="tab-text">Download video</span>
+        </button>
+        <button class="tab-btn {{ 'active' if active_tool == 'background' else '' }}" data-tab="background">
+          <span class="tab-text">Remove BG</span>
+        </button>
+
+        <div class="tab-group-label" data-group="docs">Tài liệu</div>
+        <button class="tab-btn {{ 'active' if active_tool == 'translate' else '' }}" data-tab="translate">
+          <span class="tab-text">Translate XLSX</span>
+        </button>
+        <button class="tab-btn {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-tab="xlsx-markdown">
+          <span class="tab-text">XLSX to MD</span>
+        </button>
+
+        <div class="tab-group-label" data-group="text">Văn bản</div>
+        <button class="tab-btn {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-tab="markdown-preview">
+          <span class="tab-text">MD Preview</span>
+        </button>
+        <button class="tab-btn {{ 'active' if active_tool == 'text-compare' else '' }}" data-tab="text-compare">
+          <span class="tab-text">Text Compare</span>
+        </button>
       </div>
-    </section>
 
-    <!-- Translate XLSX -->
-    <section class="workspace {{ 'active' if active_tool == 'translate' else '' }}" data-workspace="translate">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">AI translation</span>
-          <h2>Translate XLSX</h2>
-        </div>
-        <span class="workspace-chip">Preserves workbook structure</span>
-      </header>
-      <div class="split-view">
-        <div class="form-panel">
-          <form class="form-stack" data-async-form data-target="#xlsx-result" action="/tools/translate-xlsx"
-            method="post" enctype="multipart/form-data">
-            <div class="drop-zone" data-drop-zone="workbook" data-sheet-loader data-sheet-target="#xlsx-sheet-list">
-              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg></div>
-              <div class="drop-zone-text">Drop <strong>.xlsx file</strong> or click to browse</div>
-              <input name="workbook" type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
-            </div>
-            <div id="xlsx-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="sel-lang">Target language</label>
-                <select id="sel-lang" name="target_language">{% for value, label in translation_languages %}<option
-                    value="{{ value }}">{{ label }}</option>{% endfor %}</select>
-              </div>
-              <div class="form-group">
-                <label for="input-key">API key</label><span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default
-                  key.' }}</span>
-                <input id="input-key" name="api_key" type="password"
-                  placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key' }}"
-                  autocomplete="off" />
-              </div>
-            </div>
-            <button class="advanced-toggle" type="button" data-toggle-advanced>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              Provider settings
-            </button>
-            <div class="advanced-content" data-advanced-content>
-              <div class="provider-box">
-                <div class="provider-header">
-                  <div><strong>Provider</strong><span>Default: AIShop24H</span></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label for="sel-prov">Provider</label><select id="sel-prov" name="provider"
-                      data-provider-select>{% for value, label in translation_providers.items() %}<option
-                        value="{{ value }}" {{ 'selected' if value==translation_default_provider else '' }}>{{ label }}
-                      </option>{% endfor %}</select></div>
-                  <div class="form-group"><label for="input-model">Model</label><input id="input-model" name="model"
-                      value="{{ translation_default_model }}" data-model-input /></div>
-                </div>
-                <div class="form-group"><label for="input-url2">Base URL</label><input id="input-url2" name="base_url"
-                    value="{{ translation_default_base_url }}" /><span class="field-help">AIShop24H:
-                    https://aishop24h.com/v1</span></div>
-                <div class="form-row" style="margin-top: 1rem;">
-                  <div class="form-group"><label for="input-workers">Max workers (Luồng)</label><input
-                      id="input-workers" type="number" name="max_workers" value="{{ translation_default_max_workers }}"
-                      min="1" max="20" /></div>
-                  <div class="form-group"><label for="input-items">Max items (Số ô/gói với mỗi request)</label><input
-                      id="input-items" type="number" name="max_items" value="{{ translation_default_max_items }}"
-                      min="1" max="500" /></div>
-                </div>
-              </div>
-            </div>
-            <div class="btn-row"><button class="btn btn-primary" type="submit">Translate XLSX</button></div>
-          </form>
-        </div>
-        <div class="resizer-handle" data-resizer></div>
-        <div class="result-panel">
-          <div id="xlsx-result" class="result-zone">
-            <div class="result-empty">
-              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="m5 8 6 6" />
-                  <path d="m4 14 6-6 2-3" />
-                  <path d="M2 5h12" />
-                  <path d="M7 2h1" />
-                  <path d="m22 22-5-10-5 10" />
-                  <path d="M14 18h6" />
-                </svg></div>
-              <h4>Ready to translate</h4>
-              <p>Upload an XLSX file — results appear here.</p>
-            </div>
-          </div>
-        </div>
+      <div class="header-search">
+        <input class="search-input" type="text" placeholder="Search tools…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-tool-search />
       </div>
-    </section>
+    </header>
 
-    <!-- XLSX to Markdown RAG -->
-    <section class="workspace {{ 'active' if active_tool == 'xlsx-markdown' else '' }}" data-workspace="xlsx-markdown">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">RAG export</span>
-          <h2>XLSX to Markdown</h2>
-        </div>
-        <span class="workspace-chip">One Markdown file per sheet</span>
-      </header>
-      <div class="split-view">
-        <div class="form-panel">
-          <form class="form-stack" data-async-form data-target="#xlsx-markdown-result" action="/tools/xlsx-to-markdown"
-            method="post" enctype="multipart/form-data">
-            <div class="drop-zone" data-drop-zone="workbook" data-sheet-loader data-sheet-target="#xlsx-markdown-sheet-list">
-              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg></div>
-              <div class="drop-zone-text">Drop <strong>.xlsx file</strong> or click to browse</div>
-              <input name="workbook" type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
-            </div>
-            <div class="form-group">
-              <label for="google-sheet-url">Google Sheet URL</label>
-              <input id="google-sheet-url" name="google_sheet_url" type="url"
-                placeholder="https://docs.google.com/spreadsheets/d/..." />
-              <span class="field-help">Use a public/exportable Google Sheet URL, or upload an XLSX file above.</span>
-            </div>
-            <div class="form-group">
-              <span class="field-label">Convert mode</span>
-              <div class="mode-toggle" role="radiogroup" aria-label="Convert mode">
-                <label>
-                  <input type="radio" name="convert_mode" value="fast" checked />
-                  <span>Fast</span>
-                </label>
-                <label>
-                  <input type="radio" name="convert_mode" value="pro" />
-                  <span>Pro AI</span>
-                </label>
-              </div>
-              <span class="field-help">Fast uses code only. Pro AI refactors layout and validates source values, so it takes longer than Fast.</span>
-            </div>
-            <button class="advanced-toggle" type="button" data-toggle-advanced>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              Pro AI settings
-            </button>
-            <div class="advanced-content" data-advanced-content>
-              <div class="provider-box">
-                <div class="provider-header">
-                  <div><strong>Provider</strong><span>Used only when Convert mode is Pro AI</span></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label for="rag-prov">Provider</label><select id="rag-prov" name="provider"
-                      data-provider-select>{% for value, label in translation_providers.items() %}<option
-                        value="{{ value }}" {{ 'selected' if value==translation_default_provider else '' }}>{{ label }}
-                      </option>{% endfor %}</select></div>
-                  <div class="form-group"><label for="rag-model">Model</label><input id="rag-model" name="model"
-                      value="{{ translation_default_model }}" data-model-input /></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="rag-key">API key</label><span class="field-help">{{ 'Default key configured.' if has_default_translation_key else 'No default key.' }}</span>
-                    <input id="rag-key" name="api_key" type="password"
-                      placeholder="{{ 'Leave empty for default' if has_default_translation_key else 'Enter API key for Pro AI' }}"
-                      autocomplete="off" />
-                  </div>
-                  <div class="form-group"><label for="rag-base-url">Base URL</label><input id="rag-base-url" name="base_url"
-                      value="{{ translation_default_base_url }}" /></div>
-                </div>
-                <div class="form-group">
-                  <label for="rag-workers">AI workers</label>
-                  <input id="rag-workers" type="number" name="max_workers" value="{{ translation_default_max_workers }}" min="1" max="20" />
-                  <span class="field-help">Higher values process more sheets in parallel, but may hit provider rate limits.</span>
-                </div>
-              </div>
-            </div>
-            <div id="xlsx-markdown-sheet-list" class="sheet-list-empty">Upload an XLSX file to see available sheets.</div>
-            <div class="btn-row"><button class="btn btn-primary" type="submit">Convert to Markdown</button></div>
-          </form>
-        </div>
-        <div class="resizer-handle" data-resizer></div>
-        <div class="result-panel">
-          <div id="xlsx-markdown-result" class="result-zone">
-            <div class="result-empty">
-              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <path d="M8 13h8" />
-                  <path d="M8 17h5" />
-                </svg></div>
-              <h4>Ready to convert</h4>
-              <p>Upload XLSX or paste a Google Sheet URL.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Remove Background -->
-    <section class="workspace {{ 'active' if active_tool == 'background' else '' }}" data-workspace="background">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">rembg</span>
-          <h2>Remove background</h2>
-        </div>
-        <span class="workspace-chip">Batch processing · Offline AI</span>
-      </header>
-      <div class="split-view">
-        <div class="form-panel">
-          <form class="form-stack" id="bg-remove-form" action="/tools/remove-background"
-            method="post" enctype="multipart/form-data">
-            
-            <div class="drop-zone" data-drop-zone="images">
-              <div class="drop-zone-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg></div>
-              <div class="drop-zone-text">Drop <strong>multiple images</strong> or click to browse</div>
-              <input name="images" id="bg-images-input" type="file" accept="image/*" multiple required />
-            </div>
-            
-            <div id="bg-selected-list" class="sheet-list-empty" style="max-height: 150px; overflow-y: auto;">
-              No images selected.
-            </div>
- 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="sel-bg-model">AI Model</label>
-                <select id="sel-bg-model" name="model">
-                  {% for m in background_models %}
-                    <option value="{{ m }}" {{ 'selected' if m == 'isnet-general-use' else '' }}>{{ m }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="form-group" style="justify-content: end;">
-                <label class="check-row" style="height: 40px; margin-bottom: 0;">
-                  <input name="alpha_matting" type="checkbox" value="true" />
-                  <span>Alpha matting (Fine edges)</span>
-                </label>
-              </div>
-            </div>
- 
-            <div class="btn-row">
-              <button class="btn btn-primary" type="submit" id="bg-submit-btn">Remove background</button>
-            </div>
-          </form>
-        </div>
-        <div class="resizer-handle" data-resizer></div>
-        <div class="result-panel">
-          <div id="background-result" class="result-zone">
-            <div class="result-empty">
-              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg></div>
-              <h4>Ready to process</h4>
-              <p>Upload images — background-removed results appear here in real-time.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Markdown Preview -->
-    <section class="workspace {{ 'active' if active_tool == 'markdown-preview' else '' }}" data-workspace="markdown-preview">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">Markup</span>
-          <h2>Markdown Preview</h2>
-        </div>
-        <span class="workspace-chip">Live HTML render</span>
-      </header>
-
-      <div class="md-editor-layout">
-        <!-- LEFT: Editor pane -->
-        <form class="md-editor-pane" data-async-form data-target="#markdown-preview-result" action="/tools/markdown-preview" method="post">
-          <input type="hidden" name="translate_to" id="markdown-translate-to" value="">
-          <div class="md-pane-header">
-            <div class="md-pane-label">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-              </svg>
-              Editor
-            </div>
-            <span class="md-counter" id="md-word-count">0 từ · 0 ký tự</span>
-          </div>
-          <textarea id="markdown-text" name="text" class="md-editor-textarea" placeholder="# Tiêu đề 1&#10;**In đậm**, *in nghiêng*, `code`&#10;&#10;- Gạch đầu dòng 1&#10;- Gạch đầu dòng 2&#10;&#10;&gt; Trích dẫn&#10;&#10;```python&#10;print('Hello, World!')&#10;```&#10;&#10;| Cột A | Cột B |&#10;|-------|-------|&#10;| 1     | 2     |" required></textarea>
-          <div class="md-pane-footer">
-            <button class="btn btn-primary" type="submit">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-              Preview
-            </button>
-            <button class="btn btn-secondary" type="button" id="md-clear-btn" title="Xoá nội dung">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-              </svg>
-              Xoá
-            </button>
-          </div>
-        </form>
-
-        <div class="resizer-handle" data-resizer></div>
-
-        <!-- RIGHT: Preview pane -->
-        <div class="md-preview-pane">
-          <div class="md-pane-header">
-            <div class="md-pane-label">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-              Preview
-            </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-              <div class="md-translate-wrapper" style="display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;opacity:0.7;">
-                  <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
-                </svg>
-                <span>Dịch:</span>
-                <select id="md-translate-select" style="font-size: 11px; font-weight: 600; border: none; padding: 0 4px; background: transparent; color: var(--text); cursor: pointer; outline: none; height: auto; width: auto; font-family: inherit;">
-                  <option value="">Gốc</option>
-                  <option value="vi">Tiếng Việt</option>
-                  <option value="en">Tiếng Anh</option>
-                  <option value="zh-CN">Tiếng Trung</option>
-                  <option value="ja">Tiếng Nhật</option>
-                  <option value="ko">Tiếng Hàn</option>
-                  <option value="fr">Tiếng Pháp</option>
-                  <option value="de">Tiếng Đức</option>
-                </select>
-              </div>
-              <button class="md-copy-btn" id="md-copy-html-btn" type="button" title="Sao chép HTML">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                </svg>
-                Copy HTML
-              </button>
-              <button class="md-copy-btn" id="md-copy-gdocs-btn" type="button" title="Sao chép định dạng cho Google Docs">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;color:var(--b2)">
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                </svg>
-                Copy cho Google Docs
-              </button>
-              <button class="md-copy-btn" id="md-download-docx-btn" type="button" title="Tải tài liệu Word (.docx) cho Google Docs">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;color:var(--b2)">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Tải Word (.docx)
-              </button>
-            </div>
-          </div>
-          <div id="markdown-preview-result" class="md-preview-scroll">
-            <div class="result-empty">
-              <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg></div>
-              <h4>Preview xuất hiện ở đây</h4>
-              <p>Nhập Markdown vào editor bên trái, sau đó nhấn <strong>Preview</strong>.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Text Compare -->
-    <section class="workspace {{ 'active' if active_tool == 'text-compare' else '' }}" data-workspace="text-compare">
-      <header class="workspace-header">
-        <button class="sidebar-toggle" data-sidebar-toggle><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg></button>
-        <div class="workspace-title">
-          <span class="eyebrow">Git Diff</span>
-          <h2>Text Compare</h2>
-        </div>
-        <span class="workspace-chip">Git-style comparison</span>
-      </header>
-
-      <div class="cmp-layout">
-        <form data-async-form data-target="#text-compare-result" action="/tools/text-compare" method="post" style="display:contents">
-          <!-- Two textareas side by side -->
-          <div class="cmp-inputs">
-            <div class="cmp-input-pane cmp-original">
-              <div class="cmp-input-header">
-                <div class="cmp-input-label">
-                  <span class="cmp-badge cmp-badge-orig">A</span>
-                  Original
-                </div>
-                <span class="cmp-line-count" id="cmp-a-count">0 dòng</span>
-              </div>
-              <textarea id="text-compare-a" name="text_a" class="cmp-textarea" placeholder="Nhập văn bản gốc tại đây..." required></textarea>
-            </div>
-            <div class="cmp-divider" data-resizer>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-            <div class="cmp-input-pane cmp-modified">
-              <div class="cmp-input-header">
-                <div class="cmp-input-label">
-                  <span class="cmp-badge cmp-badge-mod">B</span>
-                  Modified
-                </div>
-                <span class="cmp-line-count" id="cmp-b-count">0 dòng</span>
-              </div>
-              <textarea id="text-compare-b" name="text_b" class="cmp-textarea" placeholder="Nhập văn bản đã chỉnh sửa tại đây..." required></textarea>
-            </div>
-          </div>
-
-          <!-- Action bar -->
-          <div class="cmp-action-bar">
-            <button class="btn btn-primary" type="submit">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-              </svg>
-              So sánh
-            </button>
-            <div class="cmp-legend">
-              <span class="cmp-legend-item cmp-legend-add">+ Thêm mới</span>
-              <span class="cmp-legend-item cmp-legend-chg">~ Thay đổi</span>
-              <span class="cmp-legend-item cmp-legend-sub">− Xoá bỏ</span>
-            </div>
-          </div>
-        </form>
-
-        <!-- Full-width result -->
-        <div id="text-compare-result" class="cmp-result">
-          <div class="result-empty">
-            <div class="result-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <line x1="18" y1="20" x2="18" y2="10"/>
-                <line x1="12" y1="20" x2="12" y2="4"/>
-                <line x1="6" y1="20" x2="6" y2="14"/>
-              </svg></div>
-            <h4>Kết quả so sánh xuất hiện ở đây</h4>
-            <p>Nhập văn bản vào hai ô bên trên, sau đó nhấn <strong>So sánh</strong>.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- WORKSPACES WRAPPER -->
+    <div class="workspaces-viewport">
+      {% include "workspaces/download.html" %}
+      {% include "workspaces/translate.html" %}
+      {% include "workspaces/xlsx-markdown.html" %}
+      {% include "workspaces/background.html" %}
+      {% include "workspaces/markdown-preview.html" %}
+      {% include "workspaces/text-compare.html" %}
+    </div>
   </main>
 </div>
 {% endblock %}

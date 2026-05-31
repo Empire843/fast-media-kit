@@ -12,6 +12,7 @@ from app.settings import PROCESSED_DIR
 
 MODELS = [
     "isnet-general-use",
+    "bria-rmbg",
     "u2net",
     "u2netp",
     "u2net_human_seg",
